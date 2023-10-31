@@ -30,6 +30,7 @@ func Execute(ctx context.Context) {
 	}
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
+		log.Printf("ERROR: %s\n", err.Error())
 		os.Exit(1)
 	}
 }
