@@ -23,6 +23,8 @@ const macPw = "admin"
 func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 
+	log.Printf("Running run stage %s\n", args[1])
+
 	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
 	if err != nil {
 		return err
@@ -41,6 +43,8 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed getting instance by external id: %w", err)
 	}
 
+	log.Printf("instance id: %s\n", instance.Id)
+
 	var nodeIp, nodeSshPort string
 	for _, rule := range instance.Instance.VM.PortForwardingRules {
 		if rule.VmPort == 22 && rule.Protocol == "tcp" {
@@ -50,6 +54,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if nodeSshPort == "" {
 		return fmt.Errorf("could not find ssh port forwarded for vm")
 	}
+	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.Instance.NodeId
 	node, err := controller.GetNode(ankaCloud.GetNodeConfig{
@@ -59,20 +64,22 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed getting node %s information: %w", nodeId, err)
 	}
 	nodeIp = node.IP
+	log.Printf("node IP: %s\n", nodeIp)
 
 	gitlabScriptFile, err := os.Open(args[0])
 	if err != nil {
 		return err
 	}
 	defer gitlabScriptFile.Close()
+	log.Printf("gitlab script path: %s", args[0])
 
 	addr := fmt.Sprintf("%s:%s", nodeIp, nodeSshPort)
-
 	dialer := net.Dialer{}
 	netConn, err := dialer.Dial("tcp", addr)
 	if err != nil {
 		return err
 	}
+	log.Printf("connected to %s\n", addr)
 	sshConfig := &ssh.ClientConfig{
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -87,7 +94,9 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer sshConn.Close()
 
+	log.Println("ssh connection established")
 	sshClient := ssh.NewClient(sshConn, chans, reqs)
 	defer sshClient.Close()
 
@@ -96,15 +105,20 @@ func execute(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer session.Close()
+	log.Println("ssh session opened")
 
 	session.Stdin = gitlabScriptFile
 	session.Stdout = os.Stdout
 	session.Stderr = os.Stderr
 
-	err = session.Start("bash")
+	err = session.Shell()
 	if err != nil {
 		return err
 	}
 
-	return session.Wait()
+	log.Println("waiting for remote execution to finish")
+	err = session.Wait()
+
+	log.Println("remote execution finished")
+	return err
 }

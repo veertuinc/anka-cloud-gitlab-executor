@@ -30,6 +30,7 @@ type driver struct {
 
 func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
+	log.Println("Running config stage")
 
 	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
 	if err != nil {

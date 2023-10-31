@@ -17,6 +17,7 @@ var Command = &cobra.Command{
 
 func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
+	log.Println("Running prepare stage")
 
 	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
 	if err != nil {
@@ -36,7 +37,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
+	log.Printf("creating instance for template %s with external id %s\n", templateId, jobId)
 	instanceId, err := controller.CreateInstance(ankaCloud.CreateInstanceConfig{
 		TemplateId:         templateId,
 		ExternalId:         jobId,
@@ -45,7 +46,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}
-	log.Printf("created instance %s\n", instanceId)
+	log.Printf("created instance id: %s\n", instanceId)
 
 	return nil
 }

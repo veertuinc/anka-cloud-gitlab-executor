@@ -18,6 +18,8 @@ var Command = &cobra.Command{
 func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stdout)
 
+	log.Println("Running cleanup stage")
+
 	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
 	if err != nil {
 		return err
@@ -34,6 +36,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed getting instance by external id: %w", err)
 	}
+	log.Printf("instance id: %s\n", instance.Id)
 
 	err = controller.TerminateInstance(ankaCloud.TerminateInstanceConfig{
 		InstanceId: instance.Id,
@@ -41,6 +44,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed terminating instance: %w", err)
 	}
+	log.Printf("Issuing termination request for instance %s\n", instance.Id)
 
 	return nil
 }

@@ -3,7 +3,10 @@ package ankaCloud
 import (
 	"encoding/json"
 	"fmt"
+
 	"time"
+
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
 type InstanceState string
@@ -109,10 +112,10 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 
 	instanceId := response.InstanceIds[0]
 
-	// TODO: add timeout for scheduling, and timeout for pulling
+	// TODO: have different timeout and interval for scheduling and pulling
 	// TODO: move this to a separate function
-	// TODO: mske sleep between retries expoonential to a limit
 	if config.WaitUntilScheduled {
+		log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 		getInstaneConfig := GetInstanceConfig{Id: instanceId}
 		for {
 			instance, err := c.GetInstance(getInstaneConfig)
@@ -120,10 +123,10 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 				return "", fmt.Errorf("failed getting instance status: %w", err)
 			}
 
-			fmt.Printf("instance in %s state\n", instance.State) // TODO: move to debug log
+			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
 			switch instance.State {
 			case StateScheduling, StatePulling:
-				time.Sleep(5 * time.Second)
+				time.Sleep(5 * time.Second) // TODO: make sleep between retries expoonential to a limit
 				continue
 			}
 
