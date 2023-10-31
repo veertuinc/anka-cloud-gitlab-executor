@@ -1,6 +1,9 @@
 package ankaCloud
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type GetNodeConfig struct {
 	Id string
@@ -16,9 +19,15 @@ type getNodeResponse struct {
 }
 
 func (c *Client) GetNode(config GetNodeConfig) (Node, error) {
-	var response getNodeResponse
-	if err := c.Get("/api/v1/node", map[string]string{"id": config.Id}, &response); err != nil {
+	body, err := c.Get("/api/v1/node", map[string]string{"id": config.Id})
+	if err != nil {
 		return Node{}, fmt.Errorf("failed sending request: %w", err)
+	}
+
+	var response getNodeResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return Node{}, fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
 	if len(response.Nodes) == 0 {

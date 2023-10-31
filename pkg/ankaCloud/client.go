@@ -15,23 +15,10 @@ const (
 	statusOK = "OK"
 )
 
-type baseResponse interface {
-	GetStatus() string
-	GetMessage() string
-}
-
 type response struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	Body    interface{} `json:"body,omitempty"`
-}
-
-func (r response) GetStatus() string {
-	return r.Status
-}
-
-func (r response) GetMessage() string {
-	return r.Message
 }
 
 type ClientConfig struct {
@@ -43,26 +30,18 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func parse(r *http.Response, response baseResponse) error {
-	bodyBytes, err := io.ReadAll(r.Body)
+func (c *Client) parse(body []byte) (response, error) {
+	var r response
+	err := json.Unmarshal(body, &r)
 	if err != nil {
-		return fmt.Errorf("failed reading response body: %w", err)
+		return r, fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
-	err = json.Unmarshal(bodyBytes, &response)
-	if err != nil {
-		return fmt.Errorf("unexpected response body structure: %s", string(bodyBytes))
+	if r.Status != statusOK {
+		return r, fmt.Errorf(r.Message)
 	}
 
-	if r.StatusCode != 200 {
-		return fmt.Errorf("status code: %d, error: %s", r.StatusCode, response.GetMessage())
-	}
-
-	if response.GetStatus() != statusOK {
-		return fmt.Errorf(response.GetMessage())
-	}
-
-	return nil
+	return r, nil
 }
 
 func toQueryParams(params map[string]string) url.Values {
@@ -73,60 +52,101 @@ func toQueryParams(params map[string]string) url.Values {
 	return query
 }
 
-func (c *Client) Post(endpoint string, payload interface{}, response baseResponse) error {
+func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
 	}
 
 	r, err := c.httpClient.Post(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), "application/json", &buf)
 	if err != nil {
-		return fmt.Errorf("failed sending POST request: %w", err)
+		return nil, fmt.Errorf("failed sending POST request: %w", err)
+	}
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
-	return parse(r, response)
+	baseResponse, err := c.parse(bodyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("status code: %d, error: %w", r.StatusCode, err)
+	}
+
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d, error: %s", r.StatusCode, baseResponse.Message)
+	}
+
+	log.Debugf("POST request sent to %s\nRaw payload: %+v\nResponse status code: %d\nRaw body: %+v\n", endpoint, payload, r.StatusCode, string(bodyBytes))
+	return bodyBytes, nil
 }
 
-func (c *Client) Delete(endpoint string, payload interface{}, response baseResponse) error {
+func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), &buf)
 	if err != nil {
-		return fmt.Errorf("failed creating DELETE request: %w", err)
+		return nil, fmt.Errorf("failed creating DELETE request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	r, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
+		return nil, fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
+	}
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
-	if err := parse(r, response); err != nil {
-		return err
+	baseResponse, err := c.parse(bodyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("status code: %d, error: %w", r.StatusCode, err)
 	}
-	log.Debugf("POST request sent to %s with payload: %+v\nResponse status code: %d, Body: %+v\n", endpoint, payload, r.StatusCode, response)
-	return nil
+
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d, error: %s", r.StatusCode, baseResponse.Message)
+	}
+
+	log.Debugf("DELETE request sent to %s\n Raw payload: %+v\nResponse status code: %d\nRaw body: %+v\n", endpoint, payload, r.StatusCode, string(bodyBytes))
+	return bodyBytes, nil
 }
 
-func (c *Client) Get(endpoint string, queryParams map[string]string, response baseResponse) error {
+func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, error) {
 	if len(queryParams) > 0 {
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
 	r, err := c.httpClient.Get(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint))
 	if err != nil {
-		return fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
+		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
+	}
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
-	if err := parse(r, response); err != nil {
-		return err
+	baseResponse, err := c.parse(bodyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("status code: %d, error: %w", r.StatusCode, err)
 	}
-	log.Debugf("GET request to %s. Response status code: %d, Body: %+v\n", endpoint, r.StatusCode, response)
-	return nil
+
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d, error: %s", r.StatusCode, baseResponse.Message)
+	}
+
+	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
+
+	return bodyBytes, nil
 }
 
 func NewClient(config ClientConfig) *Client {

@@ -1,6 +1,7 @@
 package ankaCloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -72,9 +73,15 @@ type InstanceWrapper struct {
 }
 
 func (c *Client) GetInstance(config GetInstanceConfig) (Instance, error) {
+	body, err := c.Get("/api/v1/vm", map[string]string{"id": config.Id})
+	if err != nil {
+		return Instance{}, fmt.Errorf("failed getting instance %s: %w", config.Id, err)
+	}
+
 	var response getInstanceResponse
-	if err := c.Get("/api/v1/vm", map[string]string{"id": config.Id}, &response); err != nil {
-		return Instance{}, fmt.Errorf("failed sending request: %w", err)
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return Instance{}, fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
 	return response.Instance, nil
@@ -89,10 +96,15 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 		payload.ExternalId = config.ExternalId
 	}
 
-	var response createInstanceResponse
-	err := c.Post("/api/v1/vm", payload, &response)
+	body, err := c.Post("/api/v1/vm", payload)
 	if err != nil {
 		return "", err
+	}
+
+	var response createInstanceResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
 	instanceId := response.InstanceIds[0]
@@ -143,19 +155,31 @@ func (c *Client) TerminateInstance(config TerminateInstanceConfig) error {
 		Id: config.InstanceId,
 	}
 
-	var response terminateInstanceResponse
-	err := c.Delete("/api/v1/vm", payload, &response)
+	body, err := c.Delete("/api/v1/vm", payload)
 	if err != nil {
 		return err
+	}
+
+	var response terminateInstanceResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
 	return nil
 }
 
 func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
-	var response getAllInstancesResponse
-	if err := c.Get("/api/v1/vm", nil, &response); err != nil {
+
+	body, err := c.Get("/api/v1/vm", nil)
+	if err != nil {
 		return nil, fmt.Errorf("failed sending request: %w", err)
+	}
+
+	var response getAllInstancesResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
 	return response.Instances, nil
