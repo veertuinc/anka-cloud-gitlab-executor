@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
 const (
@@ -100,10 +102,14 @@ func (c *Client) Delete(endpoint string, payload interface{}, response baseRespo
 	req.Header.Set("Content-Type", "application/json")
 	r, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed sending DELETE request: %w", err)
+		return fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
 	}
 
-	return parse(r, response)
+	if err := parse(r, response); err != nil {
+		return err
+	}
+	log.Debugf("POST request sent to %s with payload: %+v\nResponse status code: %d, Body: %+v\n", endpoint, payload, r.StatusCode, response)
+	return nil
 }
 
 func (c *Client) Get(endpoint string, queryParams map[string]string, response baseResponse) error {
@@ -111,18 +117,22 @@ func (c *Client) Get(endpoint string, queryParams map[string]string, response ba
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
-
 	r, err := c.httpClient.Get(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint))
 	if err != nil {
-		return fmt.Errorf("failed sending GET request: %w", err)
+		return fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
 	}
 
-	return parse(r, response)
+	if err := parse(r, response); err != nil {
+		return err
+	}
+	log.Debugf("GET request to %s. Response status code: %d, Body: %+v\n", endpoint, r.StatusCode, response)
+	return nil
 }
 
 func NewClient(config ClientConfig) *Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.MaxIdleConnsPerHost = 50
+
 	return &Client{
 		config: config,
 		httpClient: &http.Client{

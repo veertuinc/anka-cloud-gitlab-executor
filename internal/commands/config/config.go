@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
 var Command = &cobra.Command{
@@ -19,7 +20,7 @@ type configStageOutput struct {
 	CacheDir        string            `json:"cache_dir,omitempty"`
 	BuildsDirShared bool              `json:"builds_dir_is_shared"`
 	Driver          driver            `json:"driver"`
-	JobEnv          map[string]string `json:"job_env"`
+	JobEnv          map[string]string `json:"job_env,omitempty"`
 }
 
 type driver struct {
@@ -28,11 +29,12 @@ type driver struct {
 }
 
 func execute(cmd *cobra.Command, args []string) error {
+	log.SetOutput(os.Stderr)
+
 	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
 	if err != nil {
 		return err
 	}
-
 	output := configStageOutput{
 		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),
 		CacheDir:        fmt.Sprintf("/tmp/cache/%s", jobId),

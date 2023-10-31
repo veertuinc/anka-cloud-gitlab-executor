@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 	"veertu.com/anka-cloud-gitlab-executor/pkg/ankaCloud"
 )
 
@@ -20,6 +21,8 @@ const macUser = "anka"
 const macPw = "admin"
 
 func execute(cmd *cobra.Command, args []string) error {
+	log.SetOutput(os.Stderr)
+
 	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
 	if err != nil {
 		return err

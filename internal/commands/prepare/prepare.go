@@ -2,9 +2,11 @@ package prepare
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 	"veertu.com/anka-cloud-gitlab-executor/pkg/ankaCloud"
 )
 
@@ -14,6 +16,8 @@ var Command = &cobra.Command{
 }
 
 func execute(cmd *cobra.Command, args []string) error {
+	log.SetOutput(os.Stderr)
+
 	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
 	if err != nil {
 		return err
@@ -33,7 +37,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	_, err = controller.CreateInstance(ankaCloud.CreateInstanceConfig{
+	instanceId, err := controller.CreateInstance(ankaCloud.CreateInstanceConfig{
 		TemplateId:         templateId,
 		ExternalId:         jobId,
 		WaitUntilScheduled: true,
@@ -41,6 +45,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}
+	log.Printf("created instance %s\n", instanceId)
 
 	return nil
 }
