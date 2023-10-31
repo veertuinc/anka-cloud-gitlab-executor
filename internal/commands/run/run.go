@@ -20,14 +20,17 @@ const macUser = "anka"
 const macPw = "admin"
 
 func execute(cmd *cobra.Command, args []string) error {
-	ankaCloudConfig := ankaCloud.ClientConfig{
-		ControllerURL: "http://192.168.122.183",
+	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
+	if err != nil {
+		return err
 	}
-	controller := ankaCloud.NewClient(ankaCloudConfig)
+	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+		ControllerURL: controllerUrl,
+	})
 
 	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
 	if err != nil {
-		return fmt.Errorf("failed getting CI_JOB_ID: %w", err)
+		return err
 	}
 
 	instance, err := controller.GetInstanceByExternalId(jobId)

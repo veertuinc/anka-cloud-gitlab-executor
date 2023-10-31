@@ -15,7 +15,7 @@ func GetGitlabEnvVar(name string) (string, error) {
 }
 
 func GetAnkaCloudEnvVar(name string) (string, error) {
-	return getEnvVar(fmt.Sprintf("%s%s", ANKA_CLOUD_ENV_VAR_PREFIX, name))
+	return GetGitlabEnvVar(fmt.Sprintf("%s%s", ANKA_CLOUD_ENV_VAR_PREFIX, name))
 }
 
 func getEnvVar(name string) (string, error) {
