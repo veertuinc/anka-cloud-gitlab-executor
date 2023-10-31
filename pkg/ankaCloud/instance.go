@@ -99,6 +99,7 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 
 	// TODO: add timeout for scheduling, and timeout for pulling
 	// TODO: move this to a separate function
+	// TODO: mske sleep between retries expoonential to a limit
 	if config.WaitUntilScheduled {
 		getInstaneConfig := GetInstanceConfig{Id: instanceId}
 		for {
