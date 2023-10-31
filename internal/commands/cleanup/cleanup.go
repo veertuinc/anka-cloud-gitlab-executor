@@ -2,9 +2,9 @@ package cleanup
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
+	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/pkg/ankaCloud"
 )
 
@@ -19,7 +19,11 @@ func execute(cmd *cobra.Command, args []string) error {
 	}
 	controller := ankaCloud.NewClient(ankaCloudConfig)
 
-	instance, err := controller.GetInstanceByExternalId(os.Getenv("CUSTOM_ENV_CI_JOB_ID"))
+	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
+	if err != nil {
+		return fmt.Errorf("failed getting CI_JOB_ID: %w", err)
+	}
+	instance, err := controller.GetInstanceByExternalId(jobId)
 	if err != nil {
 		return fmt.Errorf("failed getting instance by external id: %w", err)
 	}
