@@ -44,6 +44,11 @@ func execute(cmd *cobra.Command, args []string) error {
 		ExternalId: jobId,
 	}
 
+	tag, ok := env.Get(env.AnkaVar("TEMPLATE_TAG"))
+	if ok {
+		config.TemplateTag = tag
+	}
+
 	log.Printf("creating instance with config: %+v\n", config)
 	instanceId, err := controller.CreateInstance(config)
 	if err != nil {
