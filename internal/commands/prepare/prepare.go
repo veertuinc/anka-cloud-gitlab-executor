@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/env"
+	"veertu.com/anka-cloud-gitlab-executor/internal/errors"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -19,29 +20,32 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
-	if err != nil {
-		return err
+	controllerUrl, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
+	if !ok {
+		return errors.MissingEnvVar(env.AnkaVar("CONTROLLER_URL"))
 	}
 
-	templateId, err := gitlab.GetAnkaCloudEnvVar("TEMPLATE_ID")
-	if err != nil {
-		return err
+	templateId, ok := env.Get(env.AnkaVar("TEMPLATE_ID"))
+	if !ok {
+		return errors.MissingEnvVar(env.AnkaVar("TEMPLATE_ID"))
 	}
 
 	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerUrl,
 	})
 
-	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
-	if err != nil {
-		return err
+	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
+	if !ok {
+		return errors.MissingEnvVar(env.GitlabVar("CI_JOB_ID"))
 	}
-	log.Printf("creating instance for template %s with external id %s\n", templateId, jobId)
-	instanceId, err := controller.CreateInstance(ankaCloud.CreateInstanceConfig{
+
+	config := ankaCloud.CreateInstanceConfig{
 		TemplateId: templateId,
 		ExternalId: jobId,
-	})
+	}
+
+	log.Printf("creating instance with config: %+v\n", config)
+	instanceId, err := controller.CreateInstance(config)
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}

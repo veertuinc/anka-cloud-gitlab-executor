@@ -9,7 +9,7 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/commands/config"
 	"veertu.com/anka-cloud-gitlab-executor/internal/commands/prepare"
 	"veertu.com/anka-cloud-gitlab-executor/internal/commands/run"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/env"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -27,7 +27,8 @@ func init() {
 }
 
 func Execute(ctx context.Context) {
-	if _, err := gitlab.GetAnkaCloudEnvVar("DEBUG"); err == nil {
+	_, ok := env.Get(env.AnkaVar("DEBUG"))
+	if ok {
 		log.SetDebug(true)
 	}
 

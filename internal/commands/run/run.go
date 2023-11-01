@@ -8,7 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/env"
+	"veertu.com/anka-cloud-gitlab-executor/internal/errors"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -25,17 +26,17 @@ func execute(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	controllerUrl, err := gitlab.GetAnkaCloudEnvVar("CONTROLLER_URL")
-	if err != nil {
-		return err
+	controllerUrl, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
+	if !ok {
+		return errors.MissingEnvVar(env.AnkaVar("CONTROLLER_URL"))
 	}
 	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerUrl,
 	})
 
-	jobId, err := gitlab.GetGitlabEnvVar("CI_JOB_ID")
-	if err != nil {
-		return err
+	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
+	if !ok {
+		return errors.MissingEnvVar(env.GitlabVar("CI_JOB_ID"))
 	}
 
 	instance, err := controller.GetInstanceByExternalId(jobId)
