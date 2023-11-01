@@ -25,6 +25,7 @@ type createInstanceRequestPayload struct {
 	TemplateId string `json:"vmid"`
 	ExternalId string `json:"external_id,omitempty"`
 	Tag        string `json:"tag,omitempty"`
+	NodeId     string `json:"node_id,omitempty"`
 }
 
 type createInstanceResponse struct {
@@ -36,6 +37,7 @@ type CreateInstanceConfig struct {
 	TemplateId  string
 	TemplateTag string
 	ExternalId  string
+	NodeId      string
 }
 
 type GetInstanceConfig struct {
@@ -102,6 +104,10 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 
 	if config.TemplateTag != "" {
 		payload.Tag = config.TemplateTag
+	}
+
+	if config.NodeId != "" {
+		payload.NodeId = config.NodeId
 	}
 
 	body, err := c.Post("/api/v1/vm", payload)
