@@ -15,7 +15,7 @@ var Command = &cobra.Command{
 	RunE: execute,
 }
 
-type configStageOutput struct {
+type output struct {
 	BuildsDir       string            `json:"builds_dir,omitempty"`
 	CacheDir        string            `json:"cache_dir,omitempty"`
 	BuildsDirShared bool              `json:"builds_dir_is_shared"`
@@ -36,12 +36,12 @@ func execute(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	output := configStageOutput{
+	output := output{
 		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),
 		CacheDir:        fmt.Sprintf("/tmp/cache/%s", jobId),
 		BuildsDirShared: false,
 		Driver: driver{
-			Name:    "Anka Cloud",
+			Name:    "Anka Cloud Gitlab Executor",
 			Version: "1.0.0", // TODO incorporate versioning into build scripts and here also
 		},
 	}
