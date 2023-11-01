@@ -39,13 +39,17 @@ func execute(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("creating instance for template %s with external id %s\n", templateId, jobId)
 	instanceId, err := controller.CreateInstance(ankaCloud.CreateInstanceConfig{
-		TemplateId:         templateId,
-		ExternalId:         jobId,
-		WaitUntilScheduled: true,
+		TemplateId: templateId,
+		ExternalId: jobId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}
+
+	if err := controller.WaitForInstanceToBeScheduled(instanceId); err != nil {
+		return fmt.Errorf("failed waiting for instance to be scheduled: %w", err)
+	}
+
 	log.Printf("created instance id: %s\n", instanceId)
 
 	return nil

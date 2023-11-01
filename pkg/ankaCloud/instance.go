@@ -32,9 +32,8 @@ type createInstanceResponse struct {
 }
 
 type CreateInstanceConfig struct {
-	TemplateId         string
-	ExternalId         string
-	WaitUntilScheduled bool
+	TemplateId string
+	ExternalId string
 }
 
 type GetInstanceConfig struct {
@@ -110,35 +109,34 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 		return "", fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
-	instanceId := response.InstanceIds[0]
+	return response.InstanceIds[0], nil
+}
 
+func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	// TODO: have different timeout and interval for scheduling and pulling
 	// TODO: move this to a separate function
-	if config.WaitUntilScheduled {
-		log.Printf("waiting for instance %s to be scheduled\n", instanceId)
-		getInstaneConfig := GetInstanceConfig{Id: instanceId}
-		for {
-			instance, err := c.GetInstance(getInstaneConfig)
-			if err != nil {
-				return "", fmt.Errorf("failed getting instance status: %w", err)
-			}
-
-			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
-			switch instance.State {
-			case StateScheduling, StatePulling:
-				time.Sleep(5 * time.Second) // TODO: make sleep between retries expoonential to a limit
-				continue
-			}
-
-			if instance.State == StateStarted {
-				break
-			}
-
-			return "", fmt.Errorf("instance is in an unexpected state: %s", instance.State)
+	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
+	for {
+		instance, err := c.GetInstance(GetInstanceConfig{Id: instanceId})
+		if err != nil {
+			return fmt.Errorf("failed getting instance status: %w", err)
 		}
+
+		log.Printf("instance %s is in state %q\n", instanceId, instance.State)
+		switch instance.State {
+		case StateScheduling, StatePulling:
+			time.Sleep(5 * time.Second) // TODO: make sleep between retries expoonential to a limit
+			continue
+		}
+
+		if instance.State == StateStarted {
+			break
+		}
+
+		return fmt.Errorf("instance is in an unexpected state: %s", instance.State)
 	}
 
-	return instanceId, nil
+	return nil
 }
 
 type terminateInstanceRequestPayload struct {
