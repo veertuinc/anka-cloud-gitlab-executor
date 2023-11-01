@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
+	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
-	"veertu.com/anka-cloud-gitlab-executor/pkg/ankaCloud"
 )
 
 var Command = &cobra.Command{
