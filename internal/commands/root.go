@@ -14,7 +14,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "anka-gle",
+	Use:           "anka-gle",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 func init() {
