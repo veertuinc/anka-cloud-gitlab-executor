@@ -20,18 +20,18 @@ func execute(cmd *cobra.Command, args []string) error {
 
 	log.Println("Running cleanup stage")
 
-	controllerURL, ok := os.LookupEnv(env.VAR_CONTROLLER_URL)
+	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_CONTROLLER_URL)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
 	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
 
-	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
+	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
 	instance, err := controller.GetInstanceByExternalId(jobId)

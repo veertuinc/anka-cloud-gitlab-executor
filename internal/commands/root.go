@@ -27,7 +27,7 @@ func init() {
 }
 
 func Execute(ctx context.Context) {
-	_, ok := os.LookupEnv(env.VAR_DEBUG)
+	_, ok := os.LookupEnv(env.VarDebug)
 	if ok {
 		log.SetDebug(true)
 	}

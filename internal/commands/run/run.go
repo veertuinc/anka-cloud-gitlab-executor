@@ -25,18 +25,21 @@ func execute(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	controllerURL, ok := os.LookupEnv(env.VAR_CONTROLLER_URL)
+	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_CONTROLLER_URL)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+	controller, err := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
+	if err != nil {
+		return fmt.Errorf("failed creating anka cloud client: %w", err)
+	}
 
-	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
+	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
 	instance, err := controller.GetInstanceByExternalId(jobId)

@@ -20,19 +20,19 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerURL, ok := os.LookupEnv(env.VAR_CONTROLLER_URL)
+	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_CONTROLLER_URL)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	templateId, ok := os.LookupEnv(env.VAR_TEMPLATE_ID)
+	templateId, ok := os.LookupEnv(env.VarTemplateId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_TEMPLATE_ID)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarTemplateId)
 	}
 
-	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
+	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
 	config := ankaCloud.CreateInstanceConfig{
@@ -40,17 +40,17 @@ func execute(cmd *cobra.Command, args []string) error {
 		ExternalId: jobId,
 	}
 
-	tag, ok := os.LookupEnv(env.VAR_TEMPLATE_TAG)
+	tag, ok := os.LookupEnv(env.VarTemplateTag)
 	if ok {
 		config.TemplateTag = tag
 	}
 
-	nodeId, ok := os.LookupEnv(env.VAR_NODE_ID)
+	nodeId, ok := os.LookupEnv(env.VarNodeId)
 	if ok {
 		config.NodeId = nodeId
 	}
 
-	priorityStr, ok := os.LookupEnv(env.VAR_PRIORITY)
+	priorityStr, ok := os.LookupEnv(env.VarPriority)
 	if ok {
 		priority, err := strconv.Atoi(priorityStr)
 		if err != nil {
@@ -60,7 +60,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		config.Priority = priority
 	}
 
-	nodeGroupId, ok := os.LookupEnv(env.VAR_NODE_GROUP_ID)
+	nodeGroupId, ok := os.LookupEnv(env.VarNodeGroupId)
 	if ok {
 		config.NodeGroupId = nodeGroupId
 	}

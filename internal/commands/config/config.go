@@ -32,9 +32,9 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running config stage")
 
-	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
+	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 	output := output{
 		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),
