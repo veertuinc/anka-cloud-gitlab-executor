@@ -3,6 +3,7 @@ package prepare
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
@@ -20,7 +21,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerUrl, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
+	controllerURL, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
 	if !ok {
 		return errors.MissingEnvVar(env.AnkaVar("CONTROLLER_URL"))
 	}
@@ -29,10 +30,6 @@ func execute(cmd *cobra.Command, args []string) error {
 	if !ok {
 		return errors.MissingEnvVar(env.AnkaVar("TEMPLATE_ID"))
 	}
-
-	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
-		ControllerURL: controllerUrl,
-	})
 
 	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
 	if !ok {
@@ -53,6 +50,20 @@ func execute(cmd *cobra.Command, args []string) error {
 	if ok {
 		config.NodeId = nodeId
 	}
+
+	priorityStr, ok := env.Get(env.AnkaVar("PRIORITY"))
+	if ok {
+		priority, err := strconv.Atoi(priorityStr)
+		if err != nil {
+			return fmt.Errorf("failed converting priority to int: %w", err)
+		}
+
+		config.Priority = priority
+	}
+
+	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+		ControllerURL: controllerURL,
+	})
 
 	log.Printf("creating instance with config: %+v\n", config)
 	instanceId, err := controller.CreateInstance(config)
