@@ -22,11 +22,12 @@ const (
 )
 
 type createInstanceRequestPayload struct {
-	TemplateId string `json:"vmid"`
-	ExternalId string `json:"external_id,omitempty"`
-	Tag        string `json:"tag,omitempty"`
-	NodeId     string `json:"node_id,omitempty"`
-	Priority   int    `json:"priority,omitempty"`
+	TemplateId  string `json:"vmid"`
+	ExternalId  string `json:"external_id,omitempty"`
+	Tag         string `json:"tag,omitempty"`
+	NodeId      string `json:"node_id,omitempty"`
+	Priority    int    `json:"priority,omitempty"`
+	NodeGroupId string `json:"group_id,omitempty"`
 }
 
 type createInstanceResponse struct {
@@ -40,6 +41,7 @@ type CreateInstanceConfig struct {
 	ExternalId  string
 	NodeId      string
 	Priority    int
+	NodeGroupId string
 }
 
 type GetInstanceConfig struct {
@@ -117,6 +119,10 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 			return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", config.Priority)
 		}
 		payload.Priority = config.Priority
+	}
+
+	if config.NodeGroupId != "" {
+		payload.NodeGroupId = config.NodeGroupId
 	}
 
 	body, err := c.Post("/api/v1/vm", payload)

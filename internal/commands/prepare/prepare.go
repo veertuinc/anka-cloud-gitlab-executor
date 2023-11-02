@@ -60,6 +60,11 @@ func execute(cmd *cobra.Command, args []string) error {
 		config.Priority = priority
 	}
 
+	nodeGroupId, ok := os.LookupEnv(env.VAR_NODE_GROUP_ID)
+	if ok {
+		config.NodeGroupId = nodeGroupId
+	}
+
 	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
