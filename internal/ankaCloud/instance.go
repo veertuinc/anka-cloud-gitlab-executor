@@ -140,8 +140,6 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 }
 
 func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
-	// TODO: have different timeout and interval for scheduling and pulling
-	// TODO: move this to a separate function
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 	for {
 		instance, err := c.GetInstance(GetInstanceConfig{Id: instanceId})
@@ -152,7 +150,7 @@ func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 		log.Printf("instance %s is in state %q\n", instanceId, instance.State)
 		switch instance.State {
 		case StateScheduling, StatePulling:
-			time.Sleep(5 * time.Second) // TODO: make sleep between retries expoonential to a limit
+			time.Sleep(3 * time.Second)
 			continue
 		}
 
