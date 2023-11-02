@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
-	"veertu.com/anka-cloud-gitlab-executor/internal/errors"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -33,9 +32,9 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running config stage")
 
-	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
+	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
 	if !ok {
-		return errors.MissingEnvVar(env.GitlabVar("CI_JOB_ID"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
 	}
 	output := output{
 		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),

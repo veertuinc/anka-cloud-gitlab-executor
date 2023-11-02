@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
-	"veertu.com/anka-cloud-gitlab-executor/internal/errors"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -21,19 +20,20 @@ func execute(cmd *cobra.Command, args []string) error {
 
 	log.Println("Running cleanup stage")
 
-	controllerUrl, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
+	controllerURL, ok := os.LookupEnv(env.VAR_CONTROLLER_URL)
 	if !ok {
-		return errors.MissingEnvVar(env.AnkaVar("CONTROLLER_URL"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_CONTROLLER_URL)
 	}
 
 	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
-		ControllerURL: controllerUrl,
+		ControllerURL: controllerURL,
 	})
 
-	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
+	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
 	if !ok {
-		return errors.MissingEnvVar(env.GitlabVar("CI_JOB_ID"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
 	}
+
 	instance, err := controller.GetInstanceByExternalId(jobId)
 	if err != nil {
 		return fmt.Errorf("failed getting instance by external id: %w", err)

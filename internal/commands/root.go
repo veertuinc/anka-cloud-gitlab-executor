@@ -27,7 +27,7 @@ func init() {
 }
 
 func Execute(ctx context.Context) {
-	_, ok := env.Get(env.AnkaVar("DEBUG"))
+	_, ok := os.LookupEnv(env.VAR_DEBUG)
 	if ok {
 		log.SetDebug(true)
 	}

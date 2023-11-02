@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
-	"veertu.com/anka-cloud-gitlab-executor/internal/errors"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -21,19 +20,19 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerURL, ok := env.Get(env.AnkaVar("CONTROLLER_URL"))
+	controllerURL, ok := os.LookupEnv(env.VAR_CONTROLLER_URL)
 	if !ok {
-		return errors.MissingEnvVar(env.AnkaVar("CONTROLLER_URL"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_CONTROLLER_URL)
 	}
 
-	templateId, ok := env.Get(env.AnkaVar("TEMPLATE_ID"))
+	templateId, ok := os.LookupEnv(env.VAR_TEMPLATE_ID)
 	if !ok {
-		return errors.MissingEnvVar(env.AnkaVar("TEMPLATE_ID"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_TEMPLATE_ID)
 	}
 
-	jobId, ok := env.Get(env.GitlabVar("CI_JOB_ID"))
+	jobId, ok := os.LookupEnv(env.VAR_GITLAB_JOB_ID)
 	if !ok {
-		return errors.MissingEnvVar(env.GitlabVar("CI_JOB_ID"))
+		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VAR_GITLAB_JOB_ID)
 	}
 
 	config := ankaCloud.CreateInstanceConfig{
@@ -41,17 +40,17 @@ func execute(cmd *cobra.Command, args []string) error {
 		ExternalId: jobId,
 	}
 
-	tag, ok := env.Get(env.AnkaVar("TEMPLATE_TAG"))
+	tag, ok := os.LookupEnv(env.VAR_TEMPLATE_TAG)
 	if ok {
 		config.TemplateTag = tag
 	}
 
-	nodeId, ok := env.Get(env.AnkaVar("NODE_ID"))
+	nodeId, ok := os.LookupEnv(env.VAR_NODE_ID)
 	if ok {
 		config.NodeId = nodeId
 	}
 
-	priorityStr, ok := env.Get(env.AnkaVar("PRIORITY"))
+	priorityStr, ok := os.LookupEnv(env.VAR_PRIORITY)
 	if ok {
 		priority, err := strconv.Atoi(priorityStr)
 		if err != nil {
