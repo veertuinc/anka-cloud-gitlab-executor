@@ -1,4 +1,4 @@
-# Gitlab Custom Executor
+# Anka Cloud Gitlab Executor
 
 A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custom.html) utilizing [Anka Build Cloud](https://veertu.com/anka-build/) to run your Gitlab jobs on macOS VMs.
 
