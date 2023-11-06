@@ -1,4 +1,4 @@
-package prepare
+package commands
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var Command = &cobra.Command{
+var prepareCommand = &cobra.Command{
 	Use:  "prepare",
-	RunE: execute,
+	RunE: executePrepare,
 }
 
-func execute(cmd *cobra.Command, args []string) error {
+func executePrepare(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
@@ -65,37 +65,19 @@ func execute(cmd *cobra.Command, args []string) error {
 		config.NodeGroupId = nodeGroupId
 	}
 
-	clientConfig := ankacloud.ClientConfig{
-		ControllerURL: controllerURL,
-	}
-
-	caCertPath, ok := os.LookupEnv(env.VarCaCertPath)
-	if ok {
-		clientConfig.CACertPath = caCertPath
-	}
-
-	skipTLSVerify, ok := os.LookupEnv(env.VarSkipTLSVerify)
-	if ok {
-		skip, err := strconv.ParseBool(skipTLSVerify)
-		if err != nil {
-			return fmt.Errorf("could not convert variable %q(%s) to boolean: %w", env.VarSkipTLSVerify, skipTLSVerify, err)
-		}
-		clientConfig.SkipTLSVerify = skip
-	}
-
-	clientCertPath, ok := os.LookupEnv(env.VarClientCertPath)
-	if ok {
-		clientConfig.ClientCertPath = clientCertPath
-	}
-
-	clientCertKeyPath, ok := os.LookupEnv(env.VarClientCertKeyPath)
-	if ok {
-		clientConfig.ClientCertKeyPath = clientCertKeyPath
-	}
-
-	controller, err := ankacloud.NewClient(clientConfig)
+	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
 	if err != nil {
-		return fmt.Errorf("failed creating anka cloud client: %w", err)
+		return fmt.Errorf("failing initializing HTTP client config: %w", err)
+	}
+
+	httpClient, err := ankacloud.NewHTTPClient(*httpClientConfig)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+	}
+
+	controller := ankacloud.Client{
+		ControllerURL: controllerURL,
+		HttpClient:    httpClient,
 	}
 
 	log.Printf("creating instance with config: %+v\n", config)

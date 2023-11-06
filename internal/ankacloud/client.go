@@ -2,16 +2,11 @@ package ankacloud
 
 import (
 	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"strings"
-	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -26,21 +21,9 @@ type response struct {
 	Body    interface{} `json:"body,omitempty"`
 }
 
-type ClientConfig struct {
-	ControllerURL     string
-	CACertPath        string
-	ClientCertKeyPath string
-	ClientCertPath    string
-	SkipTLSVerify     bool
-}
-
-func (c *ClientConfig) certAuthEnabled() bool {
-	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
-}
-
 type Client struct {
-	config     ClientConfig
-	httpClient *http.Client
+	ControllerURL string
+	HttpClient    *http.Client
 }
 
 func (c *Client) parse(body []byte) (response, error) {
@@ -72,7 +55,7 @@ func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
 	}
 
-	r, err := c.httpClient.Post(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), "application/json", &buf)
+	r, err := c.HttpClient.Post(fmt.Sprintf("%s%s", c.ControllerURL, endpoint), "application/json", &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed sending POST request: %w", err)
 	}
@@ -103,12 +86,12 @@ func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), &buf)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", c.ControllerURL, endpoint), &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating DELETE request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	r, err := c.httpClient.Do(req)
+	r, err := c.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
 	}
@@ -137,7 +120,7 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
-	r, err := c.httpClient.Get(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint))
+	r, err := c.HttpClient.Get(fmt.Sprintf("%s%s", c.ControllerURL, endpoint))
 	if err != nil {
 		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
 	}
@@ -160,69 +143,4 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
-}
-
-func appendRootCert(certFilePath string, caCertPool *x509.CertPool) error {
-	cert, err := os.ReadFile(certFilePath)
-	if err != nil {
-		return fmt.Errorf("error reading %q: %w", certFilePath, err)
-	}
-	ok := caCertPool.AppendCertsFromPEM(cert)
-	if !ok {
-		return fmt.Errorf("error adding cert from %q to cert pool: %w", certFilePath, err)
-	}
-	return nil
-}
-
-func NewClient(config ClientConfig) (*Client, error) {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConnsPerHost = 50
-
-	if strings.HasPrefix(config.ControllerURL, "https") {
-		if err := configureTLS(transport, config); err != nil {
-			return nil, fmt.Errorf("failed to configure TLS: %w", err)
-		}
-	}
-
-	return &Client{
-		config: config,
-		httpClient: &http.Client{
-			Transport: transport,
-			Timeout:   10 * time.Second,
-		},
-	}, nil
-}
-
-func configureTLS(transport *http.Transport, config ClientConfig) error {
-	log.Println("Handling HTTPS configuration")
-
-	tlsConfig := transport.TLSClientConfig
-	caCertPool, _ := x509.SystemCertPool()
-	if caCertPool == nil {
-		caCertPool = x509.NewCertPool()
-	}
-	tlsConfig.RootCAs = caCertPool
-
-	if config.CACertPath != "" {
-		if err := appendRootCert(config.CACertPath, caCertPool); err != nil {
-			return err
-		}
-		log.Printf("Added CA cert from %s\n", config.CACertPath)
-	}
-
-	if config.SkipTLSVerify {
-		log.Println("Allowing to skip server host verification")
-		tlsConfig.InsecureSkipVerify = true
-	}
-
-	if config.certAuthEnabled() {
-		cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientCertKeyPath)
-		if err != nil {
-			return err
-		}
-
-		tlsConfig.Certificates = []tls.Certificate{cert}
-	}
-
-	return nil
 }

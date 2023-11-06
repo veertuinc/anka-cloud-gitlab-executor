@@ -5,10 +5,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"veertu.com/anka-cloud-gitlab-executor/internal/commands/cleanup"
-	"veertu.com/anka-cloud-gitlab-executor/internal/commands/config"
-	"veertu.com/anka-cloud-gitlab-executor/internal/commands/prepare"
-	"veertu.com/anka-cloud-gitlab-executor/internal/commands/run"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -20,10 +16,10 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(cleanup.Command)
-	rootCmd.AddCommand(prepare.Command)
-	rootCmd.AddCommand(run.Command)
-	rootCmd.AddCommand(config.Command)
+	rootCmd.AddCommand(cleanupCommand)
+	rootCmd.AddCommand(prepareCommand)
+	rootCmd.AddCommand(runCommand)
+	rootCmd.AddCommand(configCommand)
 }
 
 func Execute(ctx context.Context) {

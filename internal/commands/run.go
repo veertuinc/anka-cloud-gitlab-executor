@@ -1,10 +1,9 @@
-package run
+package commands
 
 import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -13,15 +12,15 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var Command = &cobra.Command{
+var runCommand = &cobra.Command{
 	Use:  "run",
-	RunE: execute,
+	RunE: executeRun,
 }
 
 const macUser = "anka"
 const macPw = "admin"
 
-func execute(cmd *cobra.Command, args []string) error {
+func executeRun(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 
 	log.Printf("Running run stage %s\n", args[1])
@@ -31,37 +30,19 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	clientConfig := ankacloud.ClientConfig{
-		ControllerURL: controllerURL,
-	}
-
-	caCertPath, ok := os.LookupEnv(env.VarCaCertPath)
-	if ok {
-		clientConfig.CACertPath = caCertPath
-	}
-
-	clientCertPath, ok := os.LookupEnv(env.VarClientCertPath)
-	if ok {
-		clientConfig.ClientCertPath = clientCertPath
-	}
-
-	clientCertKeyPath, ok := os.LookupEnv(env.VarClientCertKeyPath)
-	if ok {
-		clientConfig.ClientCertKeyPath = clientCertKeyPath
-	}
-
-	skipTLSVerify, ok := os.LookupEnv(env.VarSkipTLSVerify)
-	if ok {
-		skip, err := strconv.ParseBool(skipTLSVerify)
-		if err != nil {
-			return fmt.Errorf("could not convert variable %q(%s) to boolean: %w", env.VarSkipTLSVerify, skipTLSVerify, err)
-		}
-		clientConfig.SkipTLSVerify = skip
-	}
-
-	controller, err := ankacloud.NewClient(clientConfig)
+	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
 	if err != nil {
-		return fmt.Errorf("failed creating anka cloud client: %w", err)
+		return fmt.Errorf("failing initializing HTTP client config: %w", err)
+	}
+
+	httpClient, err := ankacloud.NewHTTPClient(*httpClientConfig)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+	}
+
+	controller := ankacloud.Client{
+		ControllerURL: controllerURL,
+		HttpClient:    httpClient,
 	}
 
 	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
