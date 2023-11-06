@@ -65,9 +65,28 @@ func execute(cmd *cobra.Command, args []string) error {
 		config.NodeGroupId = nodeGroupId
 	}
 
-	controller := ankacloud.NewClient(ankacloud.ClientConfig{
+	clientConfig := ankacloud.ClientConfig{
 		ControllerURL: controllerURL,
-	})
+	}
+
+	caCertPath, ok := os.LookupEnv(env.VarCaCertPath)
+	if ok {
+		clientConfig.CACertPath = caCertPath
+	}
+
+	skipTLSVerify, ok := os.LookupEnv(env.VarSkipTLSVerify)
+	if ok {
+		skip, err := strconv.ParseBool(skipTLSVerify)
+		if err != nil {
+			return fmt.Errorf("could not convert variable %q(%s) to boolean: %w", env.VarSkipTLSVerify, skipTLSVerify, err)
+		}
+		clientConfig.SkipTLSVerify = skip
+	}
+
+	controller, err := ankacloud.NewClient(clientConfig)
+	if err != nil {
+		return fmt.Errorf("failed creating anka cloud client: %w", err)
+	}
 
 	log.Printf("creating instance with config: %+v\n", config)
 	instanceId, err := controller.CreateInstance(config)

@@ -2,11 +2,15 @@ package ankacloud
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
+	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -23,6 +27,8 @@ type response struct {
 
 type ClientConfig struct {
 	ControllerURL string
+	CACertPath    string
+	SkipTLSVerify bool
 }
 
 type Client struct {
@@ -149,14 +155,58 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 	return bodyBytes, nil
 }
 
-func NewClient(config ClientConfig) *Client {
+func appendRootCert(certFilePath string, caCertPool *x509.CertPool) error {
+	cert, err := os.ReadFile(certFilePath)
+	if err != nil {
+		return fmt.Errorf("error reading %q: %w", certFilePath, err)
+	}
+	ok := caCertPool.AppendCertsFromPEM(cert)
+	if !ok {
+		return fmt.Errorf("error adding cert from %q to cert pool: %w", certFilePath, err)
+	}
+	return nil
+}
+
+func NewClient(config ClientConfig) (*Client, error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.MaxIdleConnsPerHost = 50
+
+	if strings.HasPrefix(config.ControllerURL, "https") {
+		if err := configureTLS(transport, config); err != nil {
+			return nil, fmt.Errorf("failed to configure TLS: %w", err)
+		}
+	}
 
 	return &Client{
 		config: config,
 		httpClient: &http.Client{
 			Transport: transport,
+			Timeout:   10 * time.Second,
 		},
+	}, nil
+}
+
+func configureTLS(transport *http.Transport, config ClientConfig) error {
+	log.Println("Handling HTTPS configuration")
+
+	tlsConfig := transport.TLSClientConfig
+	caCertPool, _ := x509.SystemCertPool()
+	if caCertPool == nil {
+		caCertPool = x509.NewCertPool()
 	}
+	tlsConfig.RootCAs = caCertPool
+
+	if config.CACertPath != "" {
+		if err := appendRootCert(config.CACertPath, caCertPool); err != nil {
+			return err
+		}
+		log.Printf("Added CA cert from %s\n", config.CACertPath)
+	}
+
+	if config.SkipTLSVerify {
+		log.Println("Allowing to skip server host verification")
+		tlsConfig.InsecureSkipVerify = true
+	}
+
+	return nil
 }

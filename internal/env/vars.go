@@ -19,6 +19,8 @@ var (
 	VarNodeId        = ankaVar("NODE_ID")
 	VarPriority      = ankaVar("PRIORITY")
 	VarNodeGroupId   = ankaVar("NODE_GROUP_ID")
+	VarCaCertPath    = ankaVar("CA_CERT_PATH")
+	VarSkipTLSVerify = ankaVar("SKIP_TLS_VERIFY")
 
 	// Gitlab vars
 	VarGitlabJobId = gitlabVar("CI_JOB_ID")

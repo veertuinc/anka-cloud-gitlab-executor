@@ -37,6 +37,8 @@ Check out the [full configuration spec](https://docs.gitlab.com/runner/executors
 | ANKA_CLOUD_NODE_ID | ❌ | Run VM on this specific node |
 | ANKA_CLOUD_PRIORITY | ❌ | Priority in range 1-10000 (lower is more urgent) |
 | ANKA_CLOUD_NODE_GROUP_ID | ❌ | Run the VM on a specific Node Group, by Group ID |
+| ANKA_CLOUD_SKIP_TLS_VERIFY | ❌ | If Controller is using a self-signed cert, this allows the Runner to skip validation of the certificate |
+| ANKA_CLOUD_CA_CERT_PATH | ❌ | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
 
 Example basic pipeline:
 ```
