@@ -82,19 +82,19 @@ type InstanceWrapper struct {
 	Instance   Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(config GetInstanceConfig) (Instance, error) {
+func (c *Client) GetInstance(config GetInstanceConfig) (*Instance, error) {
 	body, err := c.Get("/api/v1/vm", map[string]string{"id": config.Id})
 	if err != nil {
-		return Instance{}, fmt.Errorf("failed getting instance %s: %w", config.Id, err)
+		return nil, fmt.Errorf("failed getting instance %s: %w", config.Id, err)
 	}
 
 	var response getInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return Instance{}, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
 	}
 
-	return response.Instance, nil
+	return &response.Instance, nil
 }
 
 func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
@@ -211,17 +211,17 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 	return response.Instances, nil
 }
 
-func (c *Client) GetInstanceByExternalId(externalId string) (InstanceWrapper, error) {
+func (c *Client) GetInstanceByExternalId(externalId string) (*InstanceWrapper, error) {
 	instances, err := c.GetAllInstances()
 	if err != nil {
-		return InstanceWrapper{}, fmt.Errorf("failed getting all instances: %w", err)
+		return nil, fmt.Errorf("failed getting all instances: %w", err)
 	}
 
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return instance, nil
+			return &instance, nil
 		}
 	}
 
-	return InstanceWrapper{}, fmt.Errorf("instance with external id %s not found", externalId)
+	return nil, fmt.Errorf("instance with external id %s not found", externalId)
 }
