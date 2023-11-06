@@ -30,12 +30,9 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	controller, err := ankaCloud.NewClient(ankaCloud.ClientConfig{
+	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
-	if err != nil {
-		return fmt.Errorf("failed creating anka cloud client: %w", err)
-	}
 
 	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
