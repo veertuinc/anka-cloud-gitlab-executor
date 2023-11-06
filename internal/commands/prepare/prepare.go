@@ -83,6 +83,16 @@ func execute(cmd *cobra.Command, args []string) error {
 		clientConfig.SkipTLSVerify = skip
 	}
 
+	clientCertPath, ok := os.LookupEnv(env.VarClientCertPath)
+	if ok {
+		clientConfig.ClientCertPath = clientCertPath
+	}
+
+	clientCertKeyPath, ok := os.LookupEnv(env.VarClientCertKeyPath)
+	if ok {
+		clientConfig.ClientCertKeyPath = clientCertKeyPath
+	}
+
 	controller, err := ankacloud.NewClient(clientConfig)
 	if err != nil {
 		return fmt.Errorf("failed creating anka cloud client: %w", err)

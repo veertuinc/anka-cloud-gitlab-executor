@@ -35,6 +35,16 @@ func execute(cmd *cobra.Command, args []string) error {
 		clientConfig.CACertPath = caCertPath
 	}
 
+	clientCertPath, ok := os.LookupEnv(env.VarClientCertPath)
+	if ok {
+		clientConfig.ClientCertPath = clientCertPath
+	}
+
+	clientCertKeyPath, ok := os.LookupEnv(env.VarClientCertKeyPath)
+	if ok {
+		clientConfig.ClientCertKeyPath = clientCertKeyPath
+	}
+
 	skipTLSVerify, ok := os.LookupEnv(env.VarSkipTLSVerify)
 	if ok {
 		skip, err := strconv.ParseBool(skipTLSVerify)

@@ -2,6 +2,7 @@ package ankacloud
 
 import (
 	"bytes"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
@@ -26,9 +27,15 @@ type response struct {
 }
 
 type ClientConfig struct {
-	ControllerURL string
-	CACertPath    string
-	SkipTLSVerify bool
+	ControllerURL     string
+	CACertPath        string
+	ClientCertKeyPath string
+	ClientCertPath    string
+	SkipTLSVerify     bool
+}
+
+func (c *ClientConfig) certAuthEnabled() bool {
+	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
 }
 
 type Client struct {
@@ -206,6 +213,15 @@ func configureTLS(transport *http.Transport, config ClientConfig) error {
 	if config.SkipTLSVerify {
 		log.Println("Allowing to skip server host verification")
 		tlsConfig.InsecureSkipVerify = true
+	}
+
+	if config.certAuthEnabled() {
+		cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientCertKeyPath)
+		if err != nil {
+			return err
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	return nil
