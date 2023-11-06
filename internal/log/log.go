@@ -13,9 +13,7 @@ func SetDebug(active bool) {
 }
 
 func Debug(msg string) {
-	if debug {
-		log.Printf("DEBUG: %s\n", msg)
-	}
+	Debugf("%s\n", msg)
 }
 
 func Debugf(format string, v ...any) {
