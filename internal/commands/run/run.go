@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
-	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
+	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -30,7 +30,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+	controller := ankacloud.NewClient(ankacloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
 
@@ -58,7 +58,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.Instance.NodeId
-	node, err := controller.GetNode(ankaCloud.GetNodeConfig{
+	node, err := controller.GetNode(ankacloud.GetNodeConfig{
 		Id: nodeId,
 	})
 	if err != nil {

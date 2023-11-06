@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
+	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -25,7 +25,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+	controller := ankacloud.NewClient(ankacloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
 
@@ -40,7 +40,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(ankaCloud.TerminateInstanceConfig{
+	err = controller.TerminateInstance(ankacloud.TerminateInstanceConfig{
 		InstanceId: instance.Id,
 	})
 	if err != nil {

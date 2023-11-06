@@ -1,4 +1,4 @@
-package ankaCloud
+package ankacloud
 
 import (
 	"bytes"

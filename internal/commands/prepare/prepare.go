@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"veertu.com/anka-cloud-gitlab-executor/internal/ankaCloud"
+	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/env"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -35,7 +35,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
-	config := ankaCloud.CreateInstanceConfig{
+	config := ankacloud.CreateInstanceConfig{
 		TemplateId: templateId,
 		ExternalId: jobId,
 	}
@@ -65,7 +65,7 @@ func execute(cmd *cobra.Command, args []string) error {
 		config.NodeGroupId = nodeGroupId
 	}
 
-	controller := ankaCloud.NewClient(ankaCloud.ClientConfig{
+	controller := ankacloud.NewClient(ankacloud.ClientConfig{
 		ControllerURL: controllerURL,
 	})
 
