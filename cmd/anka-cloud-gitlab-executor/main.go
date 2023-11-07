@@ -18,7 +18,8 @@ var (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
+	defer stop()
 
 	if buildFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarBuildFailureExitCode); ok {
 		if err != nil {
@@ -35,14 +36,6 @@ func main() {
 		}
 		systemFailureExitCode = systemFailureExitCodeEnvVar
 	}
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM)
-	go func() {
-		<-sigs
-		cancel()
-		os.Exit(buildFailureExitCode)
-	}()
 
 	if err := commands.Execute(ctx); err != nil {
 		log.Printf("error: %s", err)
