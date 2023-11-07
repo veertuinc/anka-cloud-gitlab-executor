@@ -35,6 +35,10 @@ type createInstanceResponse struct {
 	InstanceIds []string `json:"body"`
 }
 
+type GetInstanceRequest struct {
+	Id string
+}
+
 type getInstanceResponse struct {
 	response
 	Instance Instance `json:"body"`
@@ -74,10 +78,10 @@ type InstanceWrapper struct {
 	Instance   *Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(id string) (*Instance, error) {
-	body, err := c.Get("/api/v1/vm", map[string]string{"id": id})
+func (c *Client) GetInstance(req GetInstanceRequest) (*Instance, error) {
+	body, err := c.Get("/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instance %s: %w", id, err)
+		return nil, fmt.Errorf("failed getting instance %s: %w", req.Id, err)
 	}
 
 	var response getInstanceResponse
@@ -112,7 +116,7 @@ func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
 func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 	for {
-		instance, err := c.GetInstance(instanceId)
+		instance, err := c.GetInstance(GetInstanceRequest{Id: instanceId})
 		if err != nil {
 			return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
 		}
