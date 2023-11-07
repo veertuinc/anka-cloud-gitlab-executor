@@ -33,6 +33,11 @@ func TestTransientError(t *testing.T) {
 			expectedTransient: true,
 			expectedFake:      true,
 		},
+		{
+			e:                 fmt.Errorf("wrapper %w", TransientError(errors.New("test"))),
+			expectedTransient: true,
+			expectedFake:      false,
+		},
 	}
 
 	for _, tc := range testCases {
