@@ -30,7 +30,7 @@ const (
 	defaultRequestTimeout      = 10 * time.Second
 )
 
-func NewHTTPClient(config HttpClientConfig) (*http.Client, error) {
+func NewHTTPClient(config *HttpClientConfig) (*http.Client, error) {
 	client := &http.Client{
 		Timeout: defaultRequestTimeout,
 	}
@@ -59,7 +59,7 @@ func NewHTTPClient(config HttpClientConfig) (*http.Client, error) {
 	return client, nil
 }
 
-func configureTLS(config HttpClientConfig) (*tls.Config, error) {
+func configureTLS(config *HttpClientConfig) (*tls.Config, error) {
 	log.Println("Handling TLS configuration")
 
 	tlsConfig := &tls.Config{}

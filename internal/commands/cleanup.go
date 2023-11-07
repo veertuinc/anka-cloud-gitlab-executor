@@ -30,7 +30,7 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failing initializing HTTP client config from environment variables: %w", err)
 	}
 
-	httpClient, err := ankacloud.NewHTTPClient(*httpClientConfig)
+	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
 	if err != nil {
 		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
 	}
