@@ -61,14 +61,14 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointUrl, &buf)
 	if err != nil {
-		if err.(*url.Error).Timeout() {
-			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending POST request to %s with payload %+v: %w", endpointUrl, payload, err))
-		}
 		return nil, fmt.Errorf("failed creating POST request to %q with body %+v: %w", endpointUrl, payload, err)
 	}
 
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
+		if err.(*url.Error).Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending POST request to %s with payload %+v: %w", endpointUrl, payload, err))
+		}
 		return nil, fmt.Errorf("failed sending POST request to %s with body %+v: %w", endpointUrl, payload, err)
 	}
 	defer r.Body.Close()
