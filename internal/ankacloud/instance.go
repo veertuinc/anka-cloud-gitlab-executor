@@ -64,14 +64,14 @@ type Instance struct {
 	State      InstanceState `json:"instance_state"`
 	Id         string        `json:"instance_id"`
 	ExternalId string        `json:"external_id"`
-	VM         VM            `json:"vminfo,omitempty"`
+	VM         *VM           `json:"vminfo,omitempty"`
 	NodeId     string        `json:"node_id,omitempty"`
 }
 
 type InstanceWrapper struct {
-	Id         string   `json:"instance_id"`
-	ExternalId string   `json:"external_id"`
-	Instance   Instance `json:"vm,omitempty"`
+	Id         string    `json:"instance_id"`
+	ExternalId string    `json:"external_id"`
+	Instance   *Instance `json:"vm,omitempty"`
 }
 
 func (c *Client) GetInstance(id string) (*Instance, error) {
@@ -173,7 +173,7 @@ func (c *Client) GetInstanceByExternalId(externalId string) (*Instance, error) {
 
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return &instance.Instance, nil
+			return instance.Instance, nil
 		}
 	}
 

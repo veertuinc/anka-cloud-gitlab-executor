@@ -58,6 +58,10 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("instance id: %s\n", instance.Id)
 
 	var nodeIp, nodeSshPort string
+	if instance.VM == nil {
+		return fmt.Errorf("instance has no VM: %+v", instance)
+	}
+
 	for _, rule := range instance.VM.PortForwardingRules {
 		if rule.VmPort == 22 && rule.Protocol == "tcp" {
 			nodeSshPort = fmt.Sprintf("%d", rule.NodePort)
