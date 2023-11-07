@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -28,6 +29,9 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
 	if !ok {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
+	}
+	if !strings.HasPrefix(controllerURL, "http") {
+		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
 	}
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)

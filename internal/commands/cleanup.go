@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -23,6 +24,9 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
 	if !ok {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
+	}
+	if !strings.HasPrefix(controllerURL, "http") {
+		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
 	}
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
