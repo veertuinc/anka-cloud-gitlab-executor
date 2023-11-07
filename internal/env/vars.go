@@ -23,6 +23,8 @@ var (
 	VarSkipTLSVerify     = ankaVar("SKIP_TLS_VERIFY")
 	VarClientCertPath    = ankaVar("CLIENT_CERT_PATH")
 	VarClientCertKeyPath = ankaVar("CLIENT_CERT_KEY_PATH")
+	VarSshUserName       = ankaVar("SSH_USER_NAME")
+	VarSshPassword       = ankaVar("SSH_PASSWORD")
 
 	// Gitlab vars
 	VarGitlabJobId = gitlabVar("CI_JOB_ID")

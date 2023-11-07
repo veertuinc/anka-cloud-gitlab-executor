@@ -18,8 +18,10 @@ var runCommand = &cobra.Command{
 	RunE: executeRun,
 }
 
-const macUser = "anka"
-const macPw = "admin"
+const (
+	defaultSshUserName = "anka"
+	defaultSshPassword = "admin"
+)
 
 func executeRun(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
@@ -98,13 +100,24 @@ func executeRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed creating tcp dialer: %w", err)
 	}
 	log.Printf("connected to %s\n", addr)
+
+	sshUserName, ok := os.LookupEnv(env.VarSshUserName)
+	if !ok {
+		sshUserName = defaultSshUserName
+	}
+
+	sshPassword, ok := os.LookupEnv(env.VarSshPassword)
+	if !ok {
+		sshPassword = defaultSshPassword
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
-		User: macUser,
+		User: sshUserName,
 		Auth: []ssh.AuthMethod{
-			ssh.Password(macPw),
+			ssh.Password(sshPassword),
 		},
 	}
 

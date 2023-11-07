@@ -41,6 +41,8 @@ Check out the [full configuration spec](https://docs.gitlab.com/runner/executors
 | ANKA_CLOUD_CA_CERT_PATH | ❌ | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_PATH | ❌ | If Client Cert Authentication is enabled, this is the path for the Certificate. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
+| SSH_USER_NAME | ❌ | SSH user name to use inside VM. Defaults to "anka" |
+| SSH_PASSWORD | ❌ | SSH password to use inside VM. Defaults to "admin" |
 
 Example basic pipeline:
 ```
