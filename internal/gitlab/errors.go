@@ -5,10 +5,27 @@ import (
 	"fmt"
 )
 
-var ErrTransient = fmt.Errorf("") // this error is used to signal that the error is transient and can be retried
+var ErrMissingVar = errors.New("missing environment variable")
 
-func TransientError(err error) error {
-	return fmt.Errorf("%w%w", ErrTransient, err)
+// only use for errors.Is() calls. For wrapping, use TransientError().
+var ErrTransient = fmt.Errorf("transient error")
+
+type transientError struct {
+	e error
 }
 
-var ErrMissingVar = errors.New("missing environment variable")
+func (e transientError) Error() string {
+	return e.e.Error()
+}
+
+func (e transientError) Unwrap() error {
+	return e.e
+}
+
+func (e transientError) Is(target error) bool {
+	return target == ErrTransient
+}
+
+func TransientError(e error) error {
+	return transientError{e: e}
+}
