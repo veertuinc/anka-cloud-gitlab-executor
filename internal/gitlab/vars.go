@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -33,8 +32,6 @@ var (
 	VarBuildFailureExitCode  = "BUILD_FAILURE_EXIT_CODE"
 	VarSystemFailureExitCode = "SYSTEM_FAILURE_EXIT_CODE"
 )
-
-var ErrMissingVar = errors.New("missing environment variable")
 
 func gitlabVar(name string) string {
 	return fmt.Sprintf("%s%s", GitlabEnvVarPrefix, name)
