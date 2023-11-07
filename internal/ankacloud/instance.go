@@ -1,6 +1,7 @@
 package ankacloud
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -78,8 +79,8 @@ type InstanceWrapper struct {
 	Instance   *Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(req GetInstanceRequest) (*Instance, error) {
-	body, err := c.Get("/api/v1/vm", map[string]string{"id": req.Id})
+func (c *Client) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
+	body, err := c.Get(ctx, "/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
 		return nil, fmt.Errorf("failed getting instance %s: %w", req.Id, err)
 	}
@@ -93,13 +94,13 @@ func (c *Client) GetInstance(req GetInstanceRequest) (*Instance, error) {
 	return &response.Instance, nil
 }
 
-func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
+func (c *Client) CreateInstance(ctx context.Context, payload CreateInstanceRequest) (string, error) {
 
 	if payload.Priority < 0 || payload.Priority > 10000 {
 		return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", payload.Priority)
 	}
 
-	body, err := c.Post("/api/v1/vm", payload)
+	body, err := c.Post(ctx, "/api/v1/vm", payload)
 	if err != nil {
 		return "", fmt.Errorf("failed creating instance %+v: %w", payload, err)
 	}
@@ -113,33 +114,35 @@ func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
 	return response.InstanceIds[0], nil
 }
 
-func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
+func (c *Client) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) error {
+	const pollingInterval = 3 * time.Second
+
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 	for {
-		instance, err := c.GetInstance(GetInstanceRequest{Id: instanceId})
-		if err != nil {
-			return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
-		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(pollingInterval):
+			instance, err := c.GetInstance(ctx, GetInstanceRequest{Id: instanceId})
+			if err != nil {
+				return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
+			}
 
-		log.Printf("instance %s is in state %q\n", instanceId, instance.State)
-		switch instance.State {
-		case StateScheduling, StatePulling:
-			time.Sleep(3 * time.Second)
-			continue
+			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
+			switch instance.State {
+			case StateScheduling, StatePulling:
+				break
+			case StateStarted:
+				return nil
+			default:
+				return fmt.Errorf("instance %s is in an unexpected state: %s", instanceId, instance.State)
+			}
 		}
-
-		if instance.State == StateStarted {
-			break
-		}
-
-		return fmt.Errorf("instance is in an unexpected state: %s", instance.State)
 	}
-
-	return nil
 }
 
-func (c *Client) TerminateInstance(payload TerminateInstanceRequest) error {
-	body, err := c.Delete("/api/v1/vm", payload)
+func (c *Client) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
+	body, err := c.Delete(ctx, "/api/v1/vm", payload)
 	if err != nil {
 		return fmt.Errorf("failed terminating instance %+v: %w", payload, err)
 	}
@@ -153,9 +156,9 @@ func (c *Client) TerminateInstance(payload TerminateInstanceRequest) error {
 	return nil
 }
 
-func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
+func (c *Client) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error) {
 
-	body, err := c.Get("/api/v1/vm", nil)
+	body, err := c.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}
@@ -169,8 +172,8 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 	return response.Instances, nil
 }
 
-func (c *Client) GetInstanceByExternalId(externalId string) (*Instance, error) {
-	instances, err := c.GetAllInstances()
+func (c *Client) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
+	instances, err := c.GetAllInstances(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}

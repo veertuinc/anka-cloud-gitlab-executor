@@ -2,6 +2,7 @@ package ankacloud
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,7 +49,7 @@ func toQueryParams(params map[string]string) url.Values {
 	return query
 }
 
-func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
+func (c *Client) Post(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -56,9 +57,15 @@ func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 	}
 
 	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
-	r, err := c.HttpClient.Post(url, "application/json", &buf)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending POST request to %q with payload %+v: %w", url, payload, err)
+		return nil, fmt.Errorf("failed creating POST request to %q with body %+v: %w", url, payload, err)
+	}
+
+	r, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed sending POST request to %s with body %+v: %w", url, payload, err)
 	}
 	defer r.Body.Close()
 
@@ -80,7 +87,7 @@ func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 	return bodyBytes, nil
 }
 
-func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
+func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -88,7 +95,7 @@ func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 	}
 
 	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
-	req, err := http.NewRequest(http.MethodDelete, url, &buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating DELETE request to %q with payload %+v: %w", url, payload, err)
 	}
@@ -117,33 +124,38 @@ func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 	return bodyBytes, nil
 }
 
-func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, error) {
+func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[string]string) ([]byte, error) {
 	if len(queryParams) > 0 {
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
 	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
-	r, err := c.HttpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating GET request to %q: %w", url, err)
+	}
+
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed sending GET request to %s: %w", url, err)
 	}
-	defer r.Body.Close()
+	defer resp.Body.Close()
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
 	if err != nil {
-		return nil, fmt.Errorf("status code: %d, error: %w", r.StatusCode, err)
+		return nil, fmt.Errorf("status code: %d, error: %w", resp.StatusCode, err)
 	}
 
-	if r.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code: %d, error: %s", r.StatusCode, baseResponse.Message)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d, error: %s", resp.StatusCode, baseResponse.Message)
 	}
 
-	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
+	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, resp.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
 }

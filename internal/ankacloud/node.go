@@ -1,6 +1,7 @@
 package ankacloud
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -17,8 +18,8 @@ type getNodeResponse struct {
 	Nodes []Node `json:"body"`
 }
 
-func (c *Client) GetNode(req GetNodeRequest) (*Node, error) {
-	body, err := c.Get("/api/v1/node", map[string]string{"id": req.Id})
+func (c *Client) GetNode(ctx context.Context, req GetNodeRequest) (*Node, error) {
+	body, err := c.Get(ctx, "/api/v1/node", map[string]string{"id": req.Id})
 	if err != nil {
 		return nil, fmt.Errorf("failed getting node %q: %w", req.Id, err)
 	}
