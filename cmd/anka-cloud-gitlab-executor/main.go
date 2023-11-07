@@ -51,6 +51,4 @@ func main() {
 		}
 		os.Exit(buildFailureExitCode)
 	}
-
-	os.Exit(0)
 }
