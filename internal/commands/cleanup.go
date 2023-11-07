@@ -45,13 +45,13 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
-	instance, err := controller.GetInstanceByExternalId(jobId)
+	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
 	if err != nil {
 		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(ankacloud.TerminateInstanceRequest{
+	err = controller.TerminateInstance(cmd.Context(), ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
 	})
 	if err != nil {

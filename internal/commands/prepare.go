@@ -81,12 +81,12 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Printf("creating instance with config: %+v\n", req)
-	instanceId, err := controller.CreateInstance(req)
+	instanceId, err := controller.CreateInstance(cmd.Context(), req)
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}
 
-	if err := controller.WaitForInstanceToBeScheduled(instanceId); err != nil {
+	if err := controller.WaitForInstanceToBeScheduled(cmd.Context(), instanceId); err != nil {
 		return fmt.Errorf("failed waiting for instance %q to be scheduled: %w", instanceId, err)
 	}
 

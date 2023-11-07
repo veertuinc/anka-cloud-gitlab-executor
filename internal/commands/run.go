@@ -50,7 +50,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
-	instance, err := controller.GetInstanceByExternalId(jobId)
+	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
 	if err != nil {
 		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
 	}
@@ -73,7 +73,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.NodeId
-	node, err := controller.GetNode(ankacloud.GetNodeRequest{Id: nodeId})
+	node, err := controller.GetNode(cmd.Context(), ankacloud.GetNodeRequest{Id: nodeId})
 	if err != nil {
 		return fmt.Errorf("failed getting node %s: %w", nodeId, err)
 	}
