@@ -51,8 +51,8 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(ankacloud.TerminateInstanceConfig{
-		InstanceId: instance.Id,
+	err = controller.TerminateInstance(ankacloud.TerminateInstanceRequest{
+		Id: instance.Id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed terminating instance: %w", err)

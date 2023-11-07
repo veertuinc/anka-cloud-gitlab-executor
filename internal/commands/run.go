@@ -69,9 +69,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.Instance.NodeId
-	node, err := controller.GetNode(ankacloud.GetNodeConfig{
-		Id: nodeId,
-	})
+	node, err := controller.GetNode(nodeId)
 	if err != nil {
 		return fmt.Errorf("failed getting node %s information: %w", nodeId, err)
 	}

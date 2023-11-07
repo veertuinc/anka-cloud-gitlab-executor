@@ -35,19 +35,19 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
-	config := ankacloud.CreateInstanceConfig{
+	req := ankacloud.CreateInstanceRequest{
 		TemplateId: templateId,
 		ExternalId: jobId,
 	}
 
 	tag, ok := os.LookupEnv(env.VarTemplateTag)
 	if ok {
-		config.TemplateTag = tag
+		req.Tag = tag
 	}
 
 	nodeId, ok := os.LookupEnv(env.VarNodeId)
 	if ok {
-		config.NodeId = nodeId
+		req.NodeId = nodeId
 	}
 
 	priorityStr, ok := os.LookupEnv(env.VarPriority)
@@ -57,12 +57,12 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed converting priority to int: %w", err)
 		}
 
-		config.Priority = priority
+		req.Priority = priority
 	}
 
 	nodeGroupId, ok := os.LookupEnv(env.VarNodeGroupId)
 	if ok {
-		config.NodeGroupId = nodeGroupId
+		req.NodeGroupId = nodeGroupId
 	}
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
@@ -80,8 +80,8 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 		HttpClient:    httpClient,
 	}
 
-	log.Printf("creating instance with config: %+v\n", config)
-	instanceId, err := controller.CreateInstance(config)
+	log.Printf("creating instance with config: %+v\n", req)
+	instanceId, err := controller.CreateInstance(req)
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}

@@ -21,7 +21,7 @@ const (
 	StatePushing     InstanceState = "Pushing"
 )
 
-type createInstanceRequestPayload struct {
+type CreateInstanceRequest struct {
 	TemplateId  string `json:"vmid"`
 	ExternalId  string `json:"external_id,omitempty"`
 	Tag         string `json:"tag,omitempty"`
@@ -35,23 +35,16 @@ type createInstanceResponse struct {
 	InstanceIds []string `json:"body"`
 }
 
-type CreateInstanceConfig struct {
-	TemplateId  string
-	TemplateTag string
-	ExternalId  string
-	NodeId      string
-	Priority    int
-	NodeGroupId string
-}
-
-type GetInstanceConfig struct {
-	Id string
-}
-
 type getInstanceResponse struct {
 	response
 	Instance Instance `json:"body"`
 }
+
+type TerminateInstanceRequest struct {
+	Id string `json:"id"`
+}
+
+type terminateInstanceResponse response
 
 type getAllInstancesResponse struct {
 	response
@@ -61,7 +54,6 @@ type getAllInstancesResponse struct {
 type VM struct {
 	PortForwardingRules []PortForwardingRule `json:"port_forwarding,omitempty"`
 }
-
 type PortForwardingRule struct {
 	VmPort   int    `json:"guest_port"`
 	NodePort int    `json:"host_port"`
@@ -82,10 +74,10 @@ type InstanceWrapper struct {
 	Instance   Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(config GetInstanceConfig) (*Instance, error) {
-	body, err := c.Get("/api/v1/vm", map[string]string{"id": config.Id})
+func (c *Client) GetInstance(id string) (*Instance, error) {
+	body, err := c.Get("/api/v1/vm", map[string]string{"id": id})
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instance %s: %w", config.Id, err)
+		return nil, fmt.Errorf("failed getting instance %s: %w", id, err)
 	}
 
 	var response getInstanceResponse
@@ -97,32 +89,10 @@ func (c *Client) GetInstance(config GetInstanceConfig) (*Instance, error) {
 	return &response.Instance, nil
 }
 
-func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
-	payload := createInstanceRequestPayload{
-		TemplateId: config.TemplateId,
-	}
+func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
 
-	if config.ExternalId != "" {
-		payload.ExternalId = config.ExternalId
-	}
-
-	if config.TemplateTag != "" {
-		payload.Tag = config.TemplateTag
-	}
-
-	if config.NodeId != "" {
-		payload.NodeId = config.NodeId
-	}
-
-	if config.Priority != 0 {
-		if config.Priority < 0 || config.Priority > 10000 {
-			return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", config.Priority)
-		}
-		payload.Priority = config.Priority
-	}
-
-	if config.NodeGroupId != "" {
-		payload.NodeGroupId = config.NodeGroupId
+	if payload.Priority < 0 || payload.Priority > 10000 {
+		return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", payload.Priority)
 	}
 
 	body, err := c.Post("/api/v1/vm", payload)
@@ -142,7 +112,7 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 	for {
-		instance, err := c.GetInstance(GetInstanceConfig{Id: instanceId})
+		instance, err := c.GetInstance(instanceId)
 		if err != nil {
 			return fmt.Errorf("failed getting instance status: %w", err)
 		}
@@ -164,23 +134,7 @@ func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	return nil
 }
 
-type terminateInstanceRequestPayload struct {
-	Id string `json:"id"`
-}
-
-type terminateInstanceResponse struct {
-	response
-}
-
-type TerminateInstanceConfig struct {
-	InstanceId string
-}
-
-func (c *Client) TerminateInstance(config TerminateInstanceConfig) error {
-	payload := terminateInstanceRequestPayload{
-		Id: config.InstanceId,
-	}
-
+func (c *Client) TerminateInstance(payload TerminateInstanceRequest) error {
 	body, err := c.Delete("/api/v1/vm", payload)
 	if err != nil {
 		return err
