@@ -26,7 +26,7 @@ func main() {
 		buildFailureExitCode = buildFailureExitCodeEnvVar
 	}
 
-	if systemFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarBuildFailureExitCode); ok && err == nil {
+	if systemFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarSystemFailureExitCode); ok && err == nil {
 		systemFailureExitCode = systemFailureExitCodeEnvVar
 	}
 
