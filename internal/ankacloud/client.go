@@ -66,7 +66,7 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
-		if err.(*url.Error).Timeout() {
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
 			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending POST request to %s with payload %+v: %w", endpointUrl, payload, err))
 		}
 		return nil, fmt.Errorf("failed sending POST request to %s with body %+v: %w", endpointUrl, payload, err)
@@ -106,7 +106,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{
 	req.Header.Set("Content-Type", "application/json")
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
-		if err.(*url.Error).Timeout() {
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
 			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending DELETE request to %s with payload %+v: %w", endpointUrl, payload, err))
 		}
 		return nil, fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
@@ -144,7 +144,7 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
-		if err.(*url.Error).Timeout() {
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
 			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending GET request to %s: %w", endpointUrl, err))
 		}
 		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpointUrl, err)
