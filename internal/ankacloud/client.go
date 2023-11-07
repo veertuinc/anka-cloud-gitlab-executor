@@ -21,20 +21,16 @@ type response struct {
 	Body    interface{} `json:"body,omitempty"`
 }
 
-type ClientConfig struct {
-	ControllerURL string
-}
-
 type Client struct {
-	config     ClientConfig
-	httpClient *http.Client
+	ControllerURL string
+	HttpClient    *http.Client
 }
 
 func (c *Client) parse(body []byte) (response, error) {
 	var r response
 	err := json.Unmarshal(body, &r)
 	if err != nil {
-		return r, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return r, fmt.Errorf("failed to decode response body %+v: %w", string(body), err)
 	}
 
 	if r.Status != statusOK {
@@ -56,12 +52,13 @@ func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing POST request body %+v: %w", payload, err)
 	}
 
-	r, err := c.httpClient.Post(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), "application/json", &buf)
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	r, err := c.HttpClient.Post(url, "application/json", &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending POST request: %w", err)
+		return nil, fmt.Errorf("failed sending POST request to %q with payload %+v: %w", url, payload, err)
 	}
 	defer r.Body.Close()
 
@@ -87,15 +84,16 @@ func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing DELETE request body %+v: %w", payload, err)
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint), &buf)
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	req, err := http.NewRequest(http.MethodDelete, url, &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating DELETE request: %w", err)
+		return nil, fmt.Errorf("failed creating DELETE request to %q with payload %+v: %w", url, payload, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	r, err := c.httpClient.Do(req)
+	r, err := c.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
 	}
@@ -124,9 +122,10 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
-	r, err := c.httpClient.Get(fmt.Sprintf("%s%s", c.config.ControllerURL, endpoint))
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	r, err := c.HttpClient.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
+		return nil, fmt.Errorf("failed sending GET request to %s: %w", url, err)
 	}
 	defer r.Body.Close()
 
@@ -147,16 +146,4 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
-}
-
-func NewClient(config ClientConfig) *Client {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConnsPerHost = 50
-
-	return &Client{
-		config: config,
-		httpClient: &http.Client{
-			Transport: transport,
-		},
-	}
 }

@@ -1,4 +1,4 @@
-package prepare
+package commands
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var Command = &cobra.Command{
+var prepareCommand = &cobra.Command{
 	Use:  "prepare",
-	RunE: execute,
+	RunE: executePrepare,
 }
 
-func execute(cmd *cobra.Command, args []string) error {
+func executePrepare(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
@@ -35,48 +35,59 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
 	}
 
-	config := ankacloud.CreateInstanceConfig{
+	req := ankacloud.CreateInstanceRequest{
 		TemplateId: templateId,
 		ExternalId: jobId,
 	}
 
 	tag, ok := os.LookupEnv(env.VarTemplateTag)
 	if ok {
-		config.TemplateTag = tag
+		req.Tag = tag
 	}
 
 	nodeId, ok := os.LookupEnv(env.VarNodeId)
 	if ok {
-		config.NodeId = nodeId
+		req.NodeId = nodeId
 	}
 
 	priorityStr, ok := os.LookupEnv(env.VarPriority)
 	if ok {
 		priority, err := strconv.Atoi(priorityStr)
 		if err != nil {
-			return fmt.Errorf("failed converting priority to int: %w", err)
+			return fmt.Errorf("failed converting priority %q to int: %w", priorityStr, err)
 		}
 
-		config.Priority = priority
+		req.Priority = priority
 	}
 
 	nodeGroupId, ok := os.LookupEnv(env.VarNodeGroupId)
 	if ok {
-		config.NodeGroupId = nodeGroupId
+		req.NodeGroupId = nodeGroupId
 	}
 
-	controller := ankacloud.NewClient(ankacloud.ClientConfig{
-		ControllerURL: controllerURL,
-	})
+	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client config: %w", err)
+	}
 
-	log.Printf("creating instance with config: %+v\n", config)
-	instanceId, err := controller.CreateInstance(config)
+	httpClient, err := ankacloud.NewHTTPClient(*httpClientConfig)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+	}
+
+	controller := ankacloud.Client{
+		ControllerURL: controllerURL,
+		HttpClient:    httpClient,
+	}
+
+	log.Printf("creating instance with config: %+v\n", req)
+	instanceId, err := controller.CreateInstance(req)
 	if err != nil {
 		return fmt.Errorf("failed creating instance: %w", err)
 	}
 
 	if err := controller.WaitForInstanceToBeScheduled(instanceId); err != nil {
-		return fmt.Errorf("failed waiting for instance to be scheduled: %w", err)
+		return fmt.Errorf("failed waiting for instance %q to be scheduled: %w", instanceId, err)
 	}
 
 	log.Printf("created instance id: %s\n", instanceId)

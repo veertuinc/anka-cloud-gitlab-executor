@@ -21,7 +21,7 @@ const (
 	StatePushing     InstanceState = "Pushing"
 )
 
-type createInstanceRequestPayload struct {
+type CreateInstanceRequest struct {
 	TemplateId  string `json:"vmid"`
 	ExternalId  string `json:"external_id,omitempty"`
 	Tag         string `json:"tag,omitempty"`
@@ -35,16 +35,7 @@ type createInstanceResponse struct {
 	InstanceIds []string `json:"body"`
 }
 
-type CreateInstanceConfig struct {
-	TemplateId  string
-	TemplateTag string
-	ExternalId  string
-	NodeId      string
-	Priority    int
-	NodeGroupId string
-}
-
-type GetInstanceConfig struct {
+type GetInstanceRequest struct {
 	Id string
 }
 
@@ -52,6 +43,12 @@ type getInstanceResponse struct {
 	response
 	Instance Instance `json:"body"`
 }
+
+type TerminateInstanceRequest struct {
+	Id string `json:"id"`
+}
+
+type terminateInstanceResponse response
 
 type getAllInstancesResponse struct {
 	response
@@ -61,7 +58,6 @@ type getAllInstancesResponse struct {
 type VM struct {
 	PortForwardingRules []PortForwardingRule `json:"port_forwarding,omitempty"`
 }
-
 type PortForwardingRule struct {
 	VmPort   int    `json:"guest_port"`
 	NodePort int    `json:"host_port"`
@@ -72,68 +68,46 @@ type Instance struct {
 	State      InstanceState `json:"instance_state"`
 	Id         string        `json:"instance_id"`
 	ExternalId string        `json:"external_id"`
-	VM         VM            `json:"vminfo,omitempty"`
+	VM         *VM           `json:"vminfo,omitempty"`
 	NodeId     string        `json:"node_id,omitempty"`
 }
 
 type InstanceWrapper struct {
-	Id         string   `json:"instance_id"`
-	ExternalId string   `json:"external_id"`
-	Instance   Instance `json:"vm,omitempty"`
+	Id         string    `json:"instance_id"`
+	ExternalId string    `json:"external_id"`
+	Instance   *Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(config GetInstanceConfig) (*Instance, error) {
-	body, err := c.Get("/api/v1/vm", map[string]string{"id": config.Id})
+func (c *Client) GetInstance(req GetInstanceRequest) (*Instance, error) {
+	body, err := c.Get("/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instance %s: %w", config.Id, err)
+		return nil, fmt.Errorf("failed getting instance %s: %w", req.Id, err)
 	}
 
 	var response getInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return &response.Instance, nil
 }
 
-func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
-	payload := createInstanceRequestPayload{
-		TemplateId: config.TemplateId,
-	}
+func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
 
-	if config.ExternalId != "" {
-		payload.ExternalId = config.ExternalId
-	}
-
-	if config.TemplateTag != "" {
-		payload.Tag = config.TemplateTag
-	}
-
-	if config.NodeId != "" {
-		payload.NodeId = config.NodeId
-	}
-
-	if config.Priority != 0 {
-		if config.Priority < 0 || config.Priority > 10000 {
-			return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", config.Priority)
-		}
-		payload.Priority = config.Priority
-	}
-
-	if config.NodeGroupId != "" {
-		payload.NodeGroupId = config.NodeGroupId
+	if payload.Priority < 0 || payload.Priority > 10000 {
+		return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", payload.Priority)
 	}
 
 	body, err := c.Post("/api/v1/vm", payload)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed creating instance %+v: %w", payload, err)
 	}
 
 	var response createInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return "", fmt.Errorf("unexpected response body structure: %s", string(body))
+		return "", fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return response.InstanceIds[0], nil
@@ -142,9 +116,9 @@ func (c *Client) CreateInstance(config CreateInstanceConfig) (string, error) {
 func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
 	for {
-		instance, err := c.GetInstance(GetInstanceConfig{Id: instanceId})
+		instance, err := c.GetInstance(GetInstanceRequest{Id: instanceId})
 		if err != nil {
-			return fmt.Errorf("failed getting instance status: %w", err)
+			return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
 		}
 
 		log.Printf("instance %s is in state %q\n", instanceId, instance.State)
@@ -164,32 +138,16 @@ func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	return nil
 }
 
-type terminateInstanceRequestPayload struct {
-	Id string `json:"id"`
-}
-
-type terminateInstanceResponse struct {
-	response
-}
-
-type TerminateInstanceConfig struct {
-	InstanceId string
-}
-
-func (c *Client) TerminateInstance(config TerminateInstanceConfig) error {
-	payload := terminateInstanceRequestPayload{
-		Id: config.InstanceId,
-	}
-
+func (c *Client) TerminateInstance(payload TerminateInstanceRequest) error {
 	body, err := c.Delete("/api/v1/vm", payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed terminating instance %+v: %w", payload, err)
 	}
 
 	var response terminateInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return fmt.Errorf("unexpected response body structure: %s", string(body))
+		return fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return nil
@@ -199,27 +157,27 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 
 	body, err := c.Get("/api/v1/vm", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending request: %w", err)
+		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}
 
 	var response getAllInstancesResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return response.Instances, nil
 }
 
-func (c *Client) GetInstanceByExternalId(externalId string) (*InstanceWrapper, error) {
+func (c *Client) GetInstanceByExternalId(externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances()
 	if err != nil {
-		return nil, fmt.Errorf("failed getting all instances: %w", err)
+		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}
 
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return &instance, nil
+			return instance.Instance, nil
 		}
 	}
 

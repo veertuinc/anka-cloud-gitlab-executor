@@ -1,4 +1,4 @@
-package cleanup
+package commands
 
 import (
 	"fmt"
@@ -10,12 +10,12 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var Command = &cobra.Command{
+var cleanupCommand = &cobra.Command{
 	Use:  "cleanup",
-	RunE: execute,
+	RunE: executeCleanup,
 }
 
-func execute(cmd *cobra.Command, args []string) error {
+func executeCleanup(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stdout)
 
 	log.Println("Running cleanup stage")
@@ -25,9 +25,20 @@ func execute(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
 	}
 
-	controller := ankacloud.NewClient(ankacloud.ClientConfig{
+	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client config from environment variables: %w", err)
+	}
+
+	httpClient, err := ankacloud.NewHTTPClient(*httpClientConfig)
+	if err != nil {
+		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+	}
+
+	controller := ankacloud.Client{
 		ControllerURL: controllerURL,
-	})
+		HttpClient:    httpClient,
+	}
 
 	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
 	if !ok {
@@ -36,15 +47,15 @@ func execute(cmd *cobra.Command, args []string) error {
 
 	instance, err := controller.GetInstanceByExternalId(jobId)
 	if err != nil {
-		return fmt.Errorf("failed getting instance by external id: %w", err)
+		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(ankacloud.TerminateInstanceConfig{
-		InstanceId: instance.Id,
+	err = controller.TerminateInstance(ankacloud.TerminateInstanceRequest{
+		Id: instance.Id,
 	})
 	if err != nil {
-		return fmt.Errorf("failed terminating instance: %w", err)
+		return fmt.Errorf("failed terminating instance %q: %w", instance.Id, err)
 	}
 	log.Printf("Issuing termination request for instance %s\n", instance.Id)
 

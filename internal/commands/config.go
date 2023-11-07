@@ -1,4 +1,4 @@
-package config
+package commands
 
 import (
 	"encoding/json"
@@ -10,9 +10,9 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var Command = &cobra.Command{
+var configCommand = &cobra.Command{
 	Use:  "config",
-	RunE: execute,
+	RunE: executeConfig,
 }
 
 type output struct {
@@ -28,7 +28,7 @@ type driver struct {
 	Version string `json:"version"`
 }
 
-func execute(cmd *cobra.Command, args []string) error {
+func executeConfig(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running config stage")
 
@@ -47,7 +47,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	}
 	jsonBytes, err := json.MarshalIndent(&output, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed JSON marshalling output %+v: %w", output, err)
 	}
 
 	fmt.Fprintln(os.Stdout, string(jsonBytes))
