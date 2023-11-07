@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/env"
+	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -28,9 +28,9 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
+	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
+		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
 	}
 	if !strings.HasPrefix(controllerURL, "http") {
 		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
@@ -51,9 +51,9 @@ func executeRun(cmd *cobra.Command, args []string) error {
 		HttpClient:    httpClient,
 	}
 
-	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
+	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
+		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
 	}
 
 	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)

@@ -1,8 +1,10 @@
-package env
+package gitlab
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 )
 
 const (
@@ -27,7 +29,9 @@ var (
 	VarSshPassword       = ankaVar("SSH_PASSWORD")
 
 	// Gitlab vars
-	VarGitlabJobId = gitlabVar("CI_JOB_ID")
+	VarGitlabJobId           = gitlabVar("CI_JOB_ID")
+	VarBuildFailureExitCode  = "BUILD_FAILURE_EXIT_CODE"
+	VarSystemFailureExitCode = "SYSTEM_FAILURE_EXIT_CODE"
 )
 
 var ErrMissingVar = errors.New("missing environment variable")
@@ -38,4 +42,32 @@ func gitlabVar(name string) string {
 
 func ankaVar(name string) string {
 	return gitlabVar(fmt.Sprintf("%s%s", AnkaCloudEnvVarPrefix, name))
+}
+
+func GetBoolVar(name string) (bool, bool, error) {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return false, false, nil
+	}
+
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return false, true, fmt.Errorf("could not convert variable %s with value %q to boolean: %w", name, v, err)
+	}
+
+	return b, true, nil
+}
+
+func GetIntVar(name string) (int, bool, error) {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return 0, false, nil
+	}
+
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, true, fmt.Errorf("could not convert variable %s with value %q to boolean: %w", name, v, err)
+	}
+
+	return n, true, nil
 }

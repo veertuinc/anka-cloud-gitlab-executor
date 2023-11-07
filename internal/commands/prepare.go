@@ -3,12 +3,11 @@ package commands
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/env"
+	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -21,22 +20,22 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerURL, ok := os.LookupEnv(env.VarControllerURL)
+	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarControllerURL)
+		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
 	}
 	if !strings.HasPrefix(controllerURL, "http") {
 		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
 	}
 
-	templateId, ok := os.LookupEnv(env.VarTemplateId)
+	templateId, ok := os.LookupEnv(gitlab.VarTemplateId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarTemplateId)
+		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarTemplateId)
 	}
 
-	jobId, ok := os.LookupEnv(env.VarGitlabJobId)
+	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
 	if !ok {
-		return fmt.Errorf("%w: %s", env.ErrMissingVar, env.VarGitlabJobId)
+		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
 	}
 
 	req := ankacloud.CreateInstanceRequest{
@@ -44,28 +43,23 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 		ExternalId: jobId,
 	}
 
-	tag, ok := os.LookupEnv(env.VarTemplateTag)
-	if ok {
+	if tag, ok := os.LookupEnv(gitlab.VarTemplateTag); ok {
 		req.Tag = tag
 	}
 
-	nodeId, ok := os.LookupEnv(env.VarNodeId)
-	if ok {
+	if nodeId, ok := os.LookupEnv(gitlab.VarNodeId); ok {
 		req.NodeId = nodeId
 	}
 
-	priorityStr, ok := os.LookupEnv(env.VarPriority)
-	if ok {
-		priority, err := strconv.Atoi(priorityStr)
+	if priority, ok, err := gitlab.GetIntVar(gitlab.VarPriority); ok {
 		if err != nil {
-			return fmt.Errorf("failed converting priority %q to int: %w", priorityStr, err)
+			return fmt.Errorf("failed parsing priority: %w", err)
 		}
 
 		req.Priority = priority
 	}
 
-	nodeGroupId, ok := os.LookupEnv(env.VarNodeGroupId)
-	if ok {
+	if nodeGroupId, ok := os.LookupEnv(gitlab.VarNodeGroupId); ok {
 		req.NodeGroupId = nodeGroupId
 	}
 

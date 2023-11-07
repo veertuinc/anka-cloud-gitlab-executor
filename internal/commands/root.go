@@ -2,10 +2,10 @@ package commands
 
 import (
 	"context"
-	"os"
+	"fmt"
 
 	"github.com/spf13/cobra"
-	"veertu.com/anka-cloud-gitlab-executor/internal/env"
+	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -19,14 +19,13 @@ func init() {
 	rootCmd.AddCommand(cleanupCommand, prepareCommand, runCommand, configCommand)
 }
 
-func Execute(ctx context.Context) {
-	_, ok := os.LookupEnv(env.VarDebug)
-	if ok {
-		log.SetDebug(true)
+func Execute(ctx context.Context) error {
+	if debug, ok, err := gitlab.GetBoolVar(gitlab.VarDebug); ok {
+		if err != nil {
+			return fmt.Errorf("failed reading debug variable: %w", err)
+		}
+		log.SetDebug(debug)
 	}
 
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		log.Printf("ERROR: %s\n", err.Error())
-		os.Exit(1)
-	}
+	return rootCmd.ExecuteContext(ctx)
 }

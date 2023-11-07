@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
@@ -56,16 +57,19 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 		return nil, fmt.Errorf("failed parsing POST request body %+v: %w", payload, err)
 	}
 
-	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	endpointUrl := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointUrl, &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating POST request to %q with body %+v: %w", url, payload, err)
+		if err.(*url.Error).Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending POST request to %s with payload %+v: %w", endpointUrl, payload, err))
+		}
+		return nil, fmt.Errorf("failed creating POST request to %q with body %+v: %w", endpointUrl, payload, err)
 	}
 
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending POST request to %s with body %+v: %w", url, payload, err)
+		return nil, fmt.Errorf("failed sending POST request to %s with body %+v: %w", endpointUrl, payload, err)
 	}
 	defer r.Body.Close()
 
@@ -94,14 +98,17 @@ func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{
 		return nil, fmt.Errorf("failed parsing DELETE request body %+v: %w", payload, err)
 	}
 
-	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, &buf)
+	endpointUrl := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpointUrl, &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating DELETE request to %q with payload %+v: %w", url, payload, err)
+		return nil, fmt.Errorf("failed creating DELETE request to %q with payload %+v: %w", endpointUrl, payload, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
+		if err.(*url.Error).Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending DELETE request to %s with payload %+v: %w", endpointUrl, payload, err))
+		}
 		return nil, fmt.Errorf("failed sending DELETE request to %s with payload %+v: %w", endpoint, payload, err)
 	}
 	defer r.Body.Close()
@@ -129,15 +136,18 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
-	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	endpointUrl := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointUrl, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating GET request to %q: %w", url, err)
+		return nil, fmt.Errorf("failed creating GET request to %q: %w", endpointUrl, err)
 	}
 
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending GET request to %s: %w", url, err)
+		if err.(*url.Error).Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("timeout while sending GET request to %s: %w", endpointUrl, err))
+		}
+		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpointUrl, err)
 	}
 	defer r.Body.Close()
 
