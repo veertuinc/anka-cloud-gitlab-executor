@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/commands"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
 var (
@@ -18,15 +18,21 @@ var (
 )
 
 func main() {
-	// TODO: handle Exit Codes
-
 	ctx, cancel := context.WithCancel(context.Background())
 
-	if buildFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarBuildFailureExitCode); ok && err == nil {
+	if buildFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarBuildFailureExitCode); ok {
+		if err != nil {
+			log.Printf("failed reading build failure exit code: %s", err)
+			os.Exit(buildFailureExitCode)
+		}
 		buildFailureExitCode = buildFailureExitCodeEnvVar
 	}
 
-	if systemFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarSystemFailureExitCode); ok && err == nil {
+	if systemFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarSystemFailureExitCode); ok {
+		if err != nil {
+			log.Printf("failed reading system failure exit code: %s", err)
+			os.Exit(buildFailureExitCode)
+		}
 		systemFailureExitCode = systemFailureExitCodeEnvVar
 	}
 
