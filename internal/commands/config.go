@@ -47,7 +47,7 @@ func executeConfig(cmd *cobra.Command, args []string) error {
 	}
 	jsonBytes, err := json.MarshalIndent(&output, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed JSON marshalling output %+v: %w", output, err)
+		return fmt.Errorf("failed to JSON marshal output %+v: %w", output, err)
 	}
 
 	fmt.Fprintln(os.Stdout, string(jsonBytes))

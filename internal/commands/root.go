@@ -22,7 +22,7 @@ func init() {
 func Execute(ctx context.Context) error {
 	if debug, ok, err := gitlab.GetBoolVar(gitlab.VarDebug); ok {
 		if err != nil {
-			return fmt.Errorf("failed reading debug variable: %w", err)
+			return fmt.Errorf("failed to read debug variable: %w", err)
 		}
 		log.SetDebug(debug)
 	}

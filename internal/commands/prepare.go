@@ -53,7 +53,7 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 
 	if priority, ok, err := gitlab.GetIntVar(gitlab.VarPriority); ok {
 		if err != nil {
-			return fmt.Errorf("failed parsing priority: %w", err)
+			return fmt.Errorf("failed to parse priority: %w", err)
 		}
 
 		req.Priority = priority
@@ -65,12 +65,12 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client config: %w", err)
+		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
 	}
 
 	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+		return fmt.Errorf("failed to initialize HTTP client with config +%v: %w", httpClientConfig, err)
 	}
 
 	controller := ankacloud.Client{
@@ -81,11 +81,11 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	log.Printf("creating instance with config: %+v\n", req)
 	instanceId, err := controller.CreateInstance(cmd.Context(), req)
 	if err != nil {
-		return fmt.Errorf("failed creating instance: %w", err)
+		return fmt.Errorf("failed to create instance: %w", err)
 	}
 
 	if err := controller.WaitForInstanceToBeScheduled(cmd.Context(), instanceId); err != nil {
-		return fmt.Errorf("failed waiting for instance %q to be scheduled: %w", instanceId, err)
+		return fmt.Errorf("failed to wait for instance %q to be scheduled: %w", instanceId, err)
 	}
 
 	log.Printf("created instance id: %s\n", instanceId)

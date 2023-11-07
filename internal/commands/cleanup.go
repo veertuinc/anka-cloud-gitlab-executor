@@ -31,12 +31,12 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client config from environment variables: %w", err)
+		return fmt.Errorf("failed to initialize HTTP client config from environment variables: %w", err)
 	}
 
 	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+		return fmt.Errorf("failed to initialize HTTP client with config +%v: %w", httpClientConfig, err)
 	}
 
 	controller := ankacloud.Client{
@@ -51,7 +51,7 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 
 	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
 	if err != nil {
-		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", jobId, err)
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
@@ -59,7 +59,7 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 		Id: instance.Id,
 	})
 	if err != nil {
-		return fmt.Errorf("failed terminating instance %q: %w", instance.Id, err)
+		return fmt.Errorf("failed to terminate instance %q: %w", instance.Id, err)
 	}
 	log.Printf("Issuing termination request for instance %s\n", instance.Id)
 

@@ -21,7 +21,7 @@ func httpClientConfigFromEnvVars(controllerURL string) (*ankacloud.HttpClientCon
 
 		if skipTLSVerify, ok, err := gitlab.GetBoolVar(gitlab.VarSkipTLSVerify); ok {
 			if err != nil {
-				return nil, fmt.Errorf("failed parsing skip TLS verify: %w", err)
+				return nil, fmt.Errorf("failed to parse skip TLS verify: %w", err)
 			}
 			httpClientConfig.SkipTLSVerify = skipTLSVerify
 		}

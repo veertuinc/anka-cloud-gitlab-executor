@@ -38,12 +38,12 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client config: %w", err)
+		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
 	}
 
 	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
 	if err != nil {
-		return fmt.Errorf("failing initializing HTTP client with config +%v: %w", httpClientConfig, err)
+		return fmt.Errorf("failed to initialize HTTP client with config +%v: %w", httpClientConfig, err)
 	}
 
 	controller := ankacloud.Client{
@@ -58,7 +58,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
 	if err != nil {
-		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", jobId, err)
 	}
 
 	log.Printf("instance id: %s\n", instance.Id)
@@ -81,14 +81,14 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	nodeId := instance.NodeId
 	node, err := controller.GetNode(cmd.Context(), ankacloud.GetNodeRequest{Id: nodeId})
 	if err != nil {
-		return fmt.Errorf("failed getting node %s: %w", nodeId, err)
+		return fmt.Errorf("failed to get node %s: %w", nodeId, err)
 	}
 	nodeIp = node.IP
 	log.Printf("node IP: %s\n", nodeIp)
 
 	gitlabScriptFile, err := os.Open(args[0])
 	if err != nil {
-		return fmt.Errorf("failed opening script file at %q: %w", args[0], err)
+		return fmt.Errorf("failed to open script file at %q: %w", args[0], err)
 	}
 	defer gitlabScriptFile.Close()
 	log.Printf("gitlab script path: %s", args[0])
@@ -97,7 +97,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	dialer := net.Dialer{}
 	netConn, err := dialer.Dial("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("failed creating tcp dialer: %w", err)
+		return fmt.Errorf("failed to create tcp dialer: %w", err)
 	}
 	log.Printf("connected to %s\n", addr)
 
@@ -123,7 +123,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	sshConn, chans, reqs, err := ssh.NewClientConn(netConn, addr, sshConfig)
 	if err != nil {
-		return fmt.Errorf("failed creating new ssh client connection to %q with config %+v: %w", addr, sshConfig, err)
+		return fmt.Errorf("failed to create new ssh client connection to %q with config %+v: %w", addr, sshConfig, err)
 	}
 	defer sshConn.Close()
 
@@ -133,7 +133,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	session, err := sshClient.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed starting new ssh session: %w", err)
+		return fmt.Errorf("failed to start new ssh session: %w", err)
 	}
 	defer session.Close()
 	log.Println("ssh session opened")
@@ -144,7 +144,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	err = session.Shell()
 	if err != nil {
-		return fmt.Errorf("failed starting Shell on SSH session: %w", err)
+		return fmt.Errorf("failed to start Shell on SSH session: %w", err)
 	}
 
 	log.Println("waiting for remote execution to finish")

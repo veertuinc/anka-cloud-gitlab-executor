@@ -49,7 +49,7 @@ func GetBoolVar(name string) (bool, bool, error) {
 
 	b, err := strconv.ParseBool(v)
 	if err != nil {
-		return false, true, fmt.Errorf("could not convert variable %s with value %q to boolean: %w", name, v, err)
+		return false, true, fmt.Errorf("failed to convert variable %s with value %q to boolean: %w", name, v, err)
 	}
 
 	return b, true, nil
@@ -63,7 +63,7 @@ func GetIntVar(name string) (int, bool, error) {
 
 	n, err := strconv.Atoi(v)
 	if err != nil {
-		return 0, true, fmt.Errorf("could not convert variable %s with value %q to boolean: %w", name, v, err)
+		return 0, true, fmt.Errorf("failed to convert variable %s with value %q to boolean: %w", name, v, err)
 	}
 
 	return n, true, nil
