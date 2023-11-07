@@ -58,7 +58,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("instance id: %s\n", instance.Id)
 
 	var nodeIp, nodeSshPort string
-	for _, rule := range instance.Instance.VM.PortForwardingRules {
+	for _, rule := range instance.VM.PortForwardingRules {
 		if rule.VmPort == 22 && rule.Protocol == "tcp" {
 			nodeSshPort = fmt.Sprintf("%d", rule.NodePort)
 		}
@@ -68,7 +68,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
-	nodeId := instance.Instance.NodeId
+	nodeId := instance.NodeId
 	node, err := controller.GetNode(nodeId)
 	if err != nil {
 		return fmt.Errorf("failed getting node %s information: %w", nodeId, err)

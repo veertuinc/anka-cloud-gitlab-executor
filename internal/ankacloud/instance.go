@@ -165,7 +165,7 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 	return response.Instances, nil
 }
 
-func (c *Client) GetInstanceByExternalId(externalId string) (*InstanceWrapper, error) {
+func (c *Client) GetInstanceByExternalId(externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances()
 	if err != nil {
 		return nil, fmt.Errorf("failed getting all instances: %w", err)
@@ -173,7 +173,7 @@ func (c *Client) GetInstanceByExternalId(externalId string) (*InstanceWrapper, e
 
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return &instance, nil
+			return &instance.Instance, nil
 		}
 	}
 
