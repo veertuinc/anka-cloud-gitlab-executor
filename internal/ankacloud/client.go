@@ -30,7 +30,7 @@ func (c *Client) parse(body []byte) (response, error) {
 	var r response
 	err := json.Unmarshal(body, &r)
 	if err != nil {
-		return r, fmt.Errorf("failed to decode response body %q: %w", string(body), err)
+		return r, fmt.Errorf("failed to decode response body %+v: %w", string(body), err)
 	}
 
 	if r.Status != statusOK {
