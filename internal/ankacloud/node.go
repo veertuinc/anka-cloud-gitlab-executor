@@ -17,13 +17,13 @@ type getNodeResponse struct {
 func (c *Client) GetNode(id string) (*Node, error) {
 	body, err := c.Get("/api/v1/node", map[string]string{"id": id})
 	if err != nil {
-		return nil, fmt.Errorf("failed sending request: %w", err)
+		return nil, fmt.Errorf("failed getting node %q: %w", id, err)
 	}
 
 	var response getNodeResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	if len(response.Nodes) == 0 {

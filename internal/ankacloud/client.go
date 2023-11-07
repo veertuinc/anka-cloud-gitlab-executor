@@ -30,7 +30,7 @@ func (c *Client) parse(body []byte) (response, error) {
 	var r response
 	err := json.Unmarshal(body, &r)
 	if err != nil {
-		return r, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return r, fmt.Errorf("failed to decode response body %q: %w", string(body), err)
 	}
 
 	if r.Status != statusOK {
@@ -52,12 +52,13 @@ func (c *Client) Post(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing POST request body %+v: %w", payload, err)
 	}
 
-	r, err := c.HttpClient.Post(fmt.Sprintf("%s%s", c.ControllerURL, endpoint), "application/json", &buf)
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	r, err := c.HttpClient.Post(url, "application/json", &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending POST request: %w", err)
+		return nil, fmt.Errorf("failed sending POST request to %q with payload %+v: %w", url, payload, err)
 	}
 	defer r.Body.Close()
 
@@ -83,12 +84,13 @@ func (c *Client) Delete(endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing POST request body: %w", err)
+		return nil, fmt.Errorf("failed parsing DELETE request body %+v: %w", payload, err)
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s%s", c.ControllerURL, endpoint), &buf)
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	req, err := http.NewRequest(http.MethodDelete, url, &buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating DELETE request: %w", err)
+		return nil, fmt.Errorf("failed creating DELETE request to %q with payload %+v: %w", url, payload, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	r, err := c.HttpClient.Do(req)
@@ -120,9 +122,10 @@ func (c *Client) Get(endpoint string, queryParams map[string]string) ([]byte, er
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 	}
-	r, err := c.HttpClient.Get(fmt.Sprintf("%s%s", c.ControllerURL, endpoint))
+	url := fmt.Sprintf("%s%s", c.ControllerURL, endpoint)
+	r, err := c.HttpClient.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending GET request to %s: %w", endpoint, err)
+		return nil, fmt.Errorf("failed sending GET request to %s: %w", url, err)
 	}
 	defer r.Body.Close()
 

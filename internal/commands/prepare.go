@@ -54,7 +54,7 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	if ok {
 		priority, err := strconv.Atoi(priorityStr)
 		if err != nil {
-			return fmt.Errorf("failed converting priority to int: %w", err)
+			return fmt.Errorf("failed converting priority %q to int: %w", priorityStr, err)
 		}
 
 		req.Priority = priority
@@ -87,7 +87,7 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := controller.WaitForInstanceToBeScheduled(instanceId); err != nil {
-		return fmt.Errorf("failed waiting for instance to be scheduled: %w", err)
+		return fmt.Errorf("failed waiting for instance %q to be scheduled: %w", instanceId, err)
 	}
 
 	log.Printf("created instance id: %s\n", instanceId)

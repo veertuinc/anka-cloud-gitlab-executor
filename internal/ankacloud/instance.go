@@ -83,7 +83,7 @@ func (c *Client) GetInstance(id string) (*Instance, error) {
 	var response getInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return &response.Instance, nil
@@ -97,13 +97,13 @@ func (c *Client) CreateInstance(payload CreateInstanceRequest) (string, error) {
 
 	body, err := c.Post("/api/v1/vm", payload)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed creating instance %+v: %w", payload, err)
 	}
 
 	var response createInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return "", fmt.Errorf("unexpected response body structure: %s", string(body))
+		return "", fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return response.InstanceIds[0], nil
@@ -114,7 +114,7 @@ func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 	for {
 		instance, err := c.GetInstance(instanceId)
 		if err != nil {
-			return fmt.Errorf("failed getting instance status: %w", err)
+			return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
 		}
 
 		log.Printf("instance %s is in state %q\n", instanceId, instance.State)
@@ -137,13 +137,13 @@ func (c *Client) WaitForInstanceToBeScheduled(instanceId string) error {
 func (c *Client) TerminateInstance(payload TerminateInstanceRequest) error {
 	body, err := c.Delete("/api/v1/vm", payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed terminating instance %+v: %w", payload, err)
 	}
 
 	var response terminateInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return fmt.Errorf("unexpected response body structure: %s", string(body))
+		return fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return nil
@@ -153,13 +153,13 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 
 	body, err := c.Get("/api/v1/vm", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed sending request: %w", err)
+		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}
 
 	var response getAllInstancesResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected response body structure: %s", string(body))
+		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
 	}
 
 	return response.Instances, nil
@@ -168,7 +168,7 @@ func (c *Client) GetAllInstances() ([]InstanceWrapper, error) {
 func (c *Client) GetInstanceByExternalId(externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances()
 	if err != nil {
-		return nil, fmt.Errorf("failed getting all instances: %w", err)
+		return nil, fmt.Errorf("failed getting instances: %w", err)
 	}
 
 	for _, instance := range instances {

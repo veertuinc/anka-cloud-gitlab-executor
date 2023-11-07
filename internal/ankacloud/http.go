@@ -49,7 +49,7 @@ func NewHTTPClient(config HttpClientConfig) (*http.Client, error) {
 	if config.IsTLS {
 		tlsConfig, err := configureTLS(config)
 		if err != nil {
-			return nil, fmt.Errorf("could not configure TLS: %w", err)
+			return nil, fmt.Errorf("could not configure TLS %+v: %w", config, err)
 		}
 		transport.TLSClientConfig = tlsConfig
 	}
@@ -71,7 +71,7 @@ func configureTLS(config HttpClientConfig) (*tls.Config, error) {
 
 	if config.CaCertPath != "" {
 		if err := appendRootCert(config.CaCertPath, caCertPool); err != nil {
-			return nil, fmt.Errorf("failed to add CA cert to pool: %w", err)
+			return nil, fmt.Errorf("failed to add CA cert from %q to pool: %w", config.CaCertPath, err)
 		}
 		log.Printf("Added CA cert at %q\n", config.CaCertPath)
 	}

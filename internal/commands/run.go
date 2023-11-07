@@ -52,7 +52,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	instance, err := controller.GetInstanceByExternalId(jobId)
 	if err != nil {
-		return fmt.Errorf("failed getting instance by external id: %w", err)
+		return fmt.Errorf("failed getting instance by external id %q: %w", jobId, err)
 	}
 
 	log.Printf("instance id: %s\n", instance.Id)
@@ -71,14 +71,14 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	nodeId := instance.NodeId
 	node, err := controller.GetNode(nodeId)
 	if err != nil {
-		return fmt.Errorf("failed getting node %s information: %w", nodeId, err)
+		return fmt.Errorf("failed getting node %s: %w", nodeId, err)
 	}
 	nodeIp = node.IP
 	log.Printf("node IP: %s\n", nodeIp)
 
 	gitlabScriptFile, err := os.Open(args[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("failed opening script file at %q: %w", args[0], err)
 	}
 	defer gitlabScriptFile.Close()
 	log.Printf("gitlab script path: %s", args[0])
@@ -87,7 +87,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	dialer := net.Dialer{}
 	netConn, err := dialer.Dial("tcp", addr)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating tcp dialer: %w", err)
 	}
 	log.Printf("connected to %s\n", addr)
 	sshConfig := &ssh.ClientConfig{
@@ -102,7 +102,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	sshConn, chans, reqs, err := ssh.NewClientConn(netConn, addr, sshConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating new ssh client connection to %q with config %+v: %w", addr, sshConfig, err)
 	}
 	defer sshConn.Close()
 
@@ -112,7 +112,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	session, err := sshClient.NewSession()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed starting new ssh session: %w", err)
 	}
 	defer session.Close()
 	log.Println("ssh session opened")
@@ -123,7 +123,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	err = session.Shell()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed starting Shell on SSH session: %w", err)
 	}
 
 	log.Println("waiting for remote execution to finish")
