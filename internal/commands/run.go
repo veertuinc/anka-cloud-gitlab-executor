@@ -101,12 +101,12 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("connected to %s\n", addr)
 
-	sshUserName, ok := os.LookupEnv(env.VarSshUserName)
+	sshUserName, ok := os.LookupEnv(gitlab.VarSshUserName)
 	if !ok {
 		sshUserName = defaultSshUserName
 	}
 
-	sshPassword, ok := os.LookupEnv(env.VarSshPassword)
+	sshPassword, ok := os.LookupEnv(gitlab.VarSshPassword)
 	if !ok {
 		sshPassword = defaultSshPassword
 	}
