@@ -135,27 +135,27 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 		return nil, fmt.Errorf("failed creating GET request to %q: %w", url, err)
 	}
 
-	resp, err := c.HttpClient.Do(req)
+	r, err := c.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed sending GET request to %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer r.Body.Close()
 
-	bodyBytes, err := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
 	if err != nil {
-		return nil, fmt.Errorf("status code: %d, error: %w", resp.StatusCode, err)
+		return nil, fmt.Errorf("status code: %d, error: %w", r.StatusCode, err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code: %d, error: %s", resp.StatusCode, baseResponse.Message)
+	if r.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d, error: %s", r.StatusCode, baseResponse.Message)
 	}
 
-	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, resp.StatusCode, string(bodyBytes))
+	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
 }
