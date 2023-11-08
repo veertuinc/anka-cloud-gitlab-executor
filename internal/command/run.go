@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -12,25 +13,27 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var runCommand = &cobra.Command{
-	Use:  "run",
-	RunE: executeRun,
-}
-
 const (
 	defaultSshUserName = "anka"
 	defaultSshPassword = "admin"
 )
 
-func executeRun(cmd *cobra.Command, args []string) error {
+var runCommand = &cobra.Command{
+	Use: "run",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executeRun(cmd.Context(), env, args)
+	},
+}
+
+func executeRun(ctx context.Context, env gitlab.Environment, args []string) error {
 	log.SetOutput(os.Stderr)
 
 	log.Printf("Running run stage %s\n", args[1])
-
-	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
-	if !ok {
-		return fmt.Errorf("failed to get environment from context")
-	}
 
 	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
@@ -47,7 +50,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 		HttpClient:    httpClient,
 	}
 
-	instance, err := controller.GetInstanceByExternalId(cmd.Context(), env.GitlabJobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
 	if err != nil {
 		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
@@ -70,7 +73,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.NodeId
-	node, err := controller.GetNode(cmd.Context(), ankacloud.GetNodeRequest{Id: nodeId})
+	node, err := controller.GetNode(ctx, ankacloud.GetNodeRequest{Id: nodeId})
 	if err != nil {
 		return fmt.Errorf("failed to get node %s: %w", nodeId, err)
 	}

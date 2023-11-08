@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -11,19 +12,21 @@ import (
 )
 
 var cleanupCommand = &cobra.Command{
-	Use:  "cleanup",
-	RunE: executeCleanup,
+	Use: "cleanup",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executeCleanup(cmd.Context(), env)
+	},
 }
 
-func executeCleanup(cmd *cobra.Command, args []string) error {
+func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stdout)
 
 	log.Println("Running cleanup stage")
-
-	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
-	if !ok {
-		return fmt.Errorf("failed to get environment from context")
-	}
 
 	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
@@ -40,13 +43,13 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 		HttpClient:    httpClient,
 	}
 
-	instance, err := controller.GetInstanceByExternalId(cmd.Context(), env.GitlabJobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
 	if err != nil {
 		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(cmd.Context(), ankacloud.TerminateInstanceRequest{
+	err = controller.TerminateInstance(ctx, ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
 	})
 	if err != nil {

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -11,18 +12,20 @@ import (
 )
 
 var prepareCommand = &cobra.Command{
-	Use:  "prepare",
-	RunE: executePrepare,
+	Use: "prepare",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executePrepare(cmd.Context(), env)
+	},
 }
 
-func executePrepare(cmd *cobra.Command, args []string) error {
+func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
-
-	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
-	if !ok {
-		return fmt.Errorf("failed to get environment from context")
-	}
 
 	if env.TemplateId == "" {
 		return fmt.Errorf("failed to get template id from environment: %w", gitlab.ErrMissingVar)
@@ -53,12 +56,12 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Printf("creating instance with config: %+v\n", req)
-	instanceId, err := controller.CreateInstance(cmd.Context(), req)
+	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to create instance: %w", err)
 	}
 
-	if err := controller.WaitForInstanceToBeScheduled(cmd.Context(), instanceId); err != nil {
+	if err := controller.WaitForInstanceToBeScheduled(ctx, instanceId); err != nil {
 		return fmt.Errorf("failed to wait for instance %q to be scheduled: %w", instanceId, err)
 	}
 
