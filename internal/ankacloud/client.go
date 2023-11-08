@@ -3,23 +3,26 @@ package ankacloud
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
+const (
+	defaultMaxIdleConnsPerHost = 20
+	defaultRequestTimeout      = 10 * time.Second
+)
+
 type APIClient struct {
-	ControllerURL string
-	HttpClient    *http.Client
+	ControllerURL     string
+	HttpClient        *http.Client
+	CustomHttpHeaders map[string]string
 }
 
 func (c *APIClient) parse(body []byte) (response, error) {
@@ -56,6 +59,13 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointUrl, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create POST request to %q with body %+v: %w", endpointUrl, payload, err)
+	}
+
+	if len(c.CustomHttpHeaders) > 0 {
+		for k, v := range c.CustomHttpHeaders {
+			log.Debugf("Setting custom header %s: %s\n", k, v)
+			req.Header.Set(k, v)
+		}
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -98,6 +108,14 @@ func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interfa
 		return nil, fmt.Errorf("failed to create DELETE request to %q with payload %+v: %w", endpointUrl, payload, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	if len(c.CustomHttpHeaders) > 0 {
+		for k, v := range c.CustomHttpHeaders {
+			log.Debugf("Setting custom header %s: %s\n", k, v)
+			req.Header.Set(k, v)
+		}
+	}
+
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
 		if e, ok := err.(*url.Error); ok && e.Timeout() {
@@ -134,6 +152,13 @@ func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[st
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GET request to %q: %w", endpointUrl, err)
+	}
+
+	if len(c.CustomHttpHeaders) > 0 {
+		for k, v := range c.CustomHttpHeaders {
+			log.Debugf("Setting custom header %s: %s\n", k, v)
+			req.Header.Set(k, v)
+		}
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -173,16 +198,12 @@ type APIClientConfig struct {
 	SkipTLSVerify       bool
 	MaxIdleConnsPerHost int
 	RequestTimeout      time.Duration
+	CustomHttpHeaders   map[string]string
 }
 
 func (c *APIClientConfig) certAuthEnabled() bool {
 	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
 }
-
-const (
-	defaultMaxIdleConnsPerHost = 20
-	defaultRequestTimeout      = 10 * time.Second
-)
 
 func NewAPIClient(config APIClientConfig) (*APIClient, error) {
 	httpClient := &http.Client{
@@ -211,53 +232,8 @@ func NewAPIClient(config APIClientConfig) (*APIClient, error) {
 	httpClient.Transport = transport
 
 	return &APIClient{
-		ControllerURL: config.BaseURL,
-		HttpClient:    httpClient,
+		ControllerURL:     config.BaseURL,
+		CustomHttpHeaders: config.CustomHttpHeaders,
+		HttpClient:        httpClient,
 	}, nil
-}
-
-func configureTLS(config APIClientConfig) (*tls.Config, error) {
-	log.Println("Handling TLS configuration")
-
-	tlsConfig := &tls.Config{}
-	caCertPool, _ := x509.SystemCertPool()
-	if caCertPool == nil {
-		caCertPool = x509.NewCertPool()
-	}
-	tlsConfig.RootCAs = caCertPool
-
-	if config.CaCertPath != "" {
-		if err := appendRootCert(config.CaCertPath, caCertPool); err != nil {
-			return nil, fmt.Errorf("failed to add CA cert from %q to pool: %w", config.CaCertPath, err)
-		}
-		log.Printf("Added CA cert at %q\n", config.CaCertPath)
-	}
-
-	if config.SkipTLSVerify {
-		log.Println("Allowing to skip server host verification")
-		tlsConfig.InsecureSkipVerify = true
-	}
-
-	if config.certAuthEnabled() {
-		cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientCertKeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process key pair (cert at %q, key at %q): %w", config.ClientCertPath, config.ClientCertKeyPath, err)
-		}
-
-		tlsConfig.Certificates = []tls.Certificate{cert}
-	}
-
-	return tlsConfig, nil
-}
-
-func appendRootCert(certFilePath string, caCertPool *x509.CertPool) error {
-	cert, err := os.ReadFile(certFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to read file at %q: %w", certFilePath, err)
-	}
-	ok := caCertPool.AppendCertsFromPEM(cert)
-	if !ok {
-		return fmt.Errorf("failed to add cert at %q to cert pool: %w", certFilePath, err)
-	}
-	return nil
 }

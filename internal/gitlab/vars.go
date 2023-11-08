@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -27,28 +28,28 @@ var (
 	varClientCertKeyPath = ankaVar("CLIENT_CERT_KEY_PATH")
 	varSshUserName       = ankaVar("SSH_USER_NAME")
 	varSshPassword       = ankaVar("SSH_PASSWORD")
+	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
 
 	// Gitlab vars
 	varGitlabJobId = gitlabVar("CI_JOB_ID")
 )
 
 type Environment struct {
-	ControllerURL               string
-	Debug                       bool
-	TemplateId                  string
-	TemplateTag                 string
-	NodeId                      string
-	Priority                    int
-	NodeGroupId                 string
-	CaCertPath                  string
-	SkipTLSVerify               bool
-	ClientCertPath              string
-	ClientCertKeyPath           string
-	SSHUserName                 string
-	SSHPassword                 string
-	GitlabJobId                 string
-	GitlabBuildFailureExitCode  int
-	GitlabSystemFailureExitCode int
+	ControllerURL     string
+	Debug             bool
+	TemplateId        string
+	TemplateTag       string
+	NodeId            string
+	Priority          int
+	NodeGroupId       string
+	CaCertPath        string
+	SkipTLSVerify     bool
+	ClientCertPath    string
+	ClientCertKeyPath string
+	SSHUserName       string
+	SSHPassword       string
+	GitlabJobId       string
+	CustomHttpHeaders map[string]string
 }
 
 func InitEnv() (Environment, error) {
@@ -94,6 +95,13 @@ func InitEnv() (Environment, error) {
 			return e, fmt.Errorf("failed to read debug variable: %w", err)
 		}
 		e.SkipTLSVerify = skip
+	}
+
+	if customHttpHeaders, ok := os.LookupEnv(varCustomHTTPHeaders); ok {
+		err := json.Unmarshal([]byte(customHttpHeaders), &e.CustomHttpHeaders)
+		if err != nil {
+			return e, fmt.Errorf("failed to parse custom http headers %q: %w", customHttpHeaders, err)
+		}
 	}
 
 	return e, nil

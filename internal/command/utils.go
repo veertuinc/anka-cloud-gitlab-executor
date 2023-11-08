@@ -12,6 +12,10 @@ func getAPIClientConfig(env gitlab.Environment) ankacloud.APIClientConfig {
 		BaseURL: env.ControllerURL,
 	}
 
+	if env.CustomHttpHeaders != nil {
+		apiClientConfig.CustomHttpHeaders = env.CustomHttpHeaders
+	}
+
 	if strings.HasPrefix(env.ControllerURL, "https") {
 		apiClientConfig.IsTLS = true
 
