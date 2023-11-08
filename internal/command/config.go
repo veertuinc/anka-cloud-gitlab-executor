@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,8 +12,15 @@ import (
 )
 
 var configCommand = &cobra.Command{
-	Use:  "config",
-	RunE: executeConfig,
+	Use: "config",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executeConfig(cmd.Context(), env)
+	},
 }
 
 type output struct {
@@ -28,17 +36,13 @@ type driver struct {
 	Version string `json:"version"`
 }
 
-func executeConfig(cmd *cobra.Command, args []string) error {
+func executeConfig(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running config stage")
 
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
-	}
 	output := output{
-		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),
-		CacheDir:        fmt.Sprintf("/tmp/cache/%s", jobId),
+		BuildsDir:       fmt.Sprintf("/tmp/build/%s", env.GitlabJobId),
+		CacheDir:        fmt.Sprintf("/tmp/cache/%s", env.GitlabJobId),
 		BuildsDirShared: false,
 		Driver: driver{
 			Name:    "Anka Cloud Gitlab Executor",

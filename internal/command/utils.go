@@ -1,38 +1,34 @@
 package command
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 )
 
-func httpClientConfigFromEnvVars(controllerURL string) (*ankacloud.HttpClientConfig, error) {
+func getHttpClientConfig(env gitlab.Environment) (*ankacloud.HttpClientConfig, error) {
 	httpClientConfig := ankacloud.HttpClientConfig{}
 
-	if strings.HasPrefix(controllerURL, "https") {
+	if strings.HasPrefix(env.ControllerURL, "https") {
 		httpClientConfig.IsTLS = true
 
-		if caCertPath, ok := os.LookupEnv(gitlab.VarCaCertPath); ok {
-			httpClientConfig.CaCertPath = caCertPath
+		if env.CaCertPath != "" {
+			httpClientConfig.CaCertPath = env.CaCertPath
 		}
 
-		if skipTLSVerify, ok, err := gitlab.GetBoolVar(gitlab.VarSkipTLSVerify); ok {
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse skip TLS verify: %w", err)
-			}
-			httpClientConfig.SkipTLSVerify = skipTLSVerify
+		if env.SkipTLSVerify {
+			httpClientConfig.SkipTLSVerify = env.SkipTLSVerify
 		}
 
-		if clientCertPath, ok := os.LookupEnv(gitlab.VarClientCertPath); ok {
-			httpClientConfig.ClientCertPath = clientCertPath
+		if env.ClientCertPath != "" {
+			httpClientConfig.ClientCertPath = env.ClientCertPath
 		}
 
-		if clientCertKeyPath, ok := os.LookupEnv(gitlab.VarClientCertKeyPath); ok {
-			httpClientConfig.ClientCertKeyPath = clientCertKeyPath
+		if env.ClientCertKeyPath != "" {
+			httpClientConfig.ClientCertKeyPath = env.ClientCertKeyPath
 		}
+
 	}
 
 	return &httpClientConfig, nil

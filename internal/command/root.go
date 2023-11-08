@@ -9,6 +9,8 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
+type contextKey string
+
 var rootCmd = &cobra.Command{
 	Use:           "anka-gle",
 	SilenceUsage:  true,
@@ -21,12 +23,12 @@ func init() {
 
 func Execute(ctx context.Context) error {
 
-	if debug, ok, err := gitlab.GetBoolVar(gitlab.VarDebug); ok {
-		if err != nil {
-			return fmt.Errorf("failed to read debug variable: %w", err)
-		}
-		log.SetDebug(debug)
+	env, err := gitlab.InitEnv()
+	if err != nil {
+		return fmt.Errorf("failed to initialize environment: %s", err)
 	}
 
-	return rootCmd.ExecuteContext(ctx)
+	log.SetDebug(env.Debug)
+
+	return rootCmd.ExecuteContext(context.WithValue(ctx, contextKey("env"), env))
 }

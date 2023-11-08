@@ -1,10 +1,10 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -13,30 +13,29 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-var runCommand = &cobra.Command{
-	Use:  "run",
-	RunE: executeRun,
-}
-
 const (
 	defaultSshUserName = "anka"
 	defaultSshPassword = "admin"
 )
 
-func executeRun(cmd *cobra.Command, args []string) error {
+var runCommand = &cobra.Command{
+	Use: "run",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executeRun(cmd.Context(), env, args)
+	},
+}
+
+func executeRun(ctx context.Context, env gitlab.Environment, args []string) error {
 	log.SetOutput(os.Stderr)
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
-	}
-	if !strings.HasPrefix(controllerURL, "http") {
-		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
-	}
-
-	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
 		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
 	}
@@ -47,18 +46,13 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 
 	controller := ankacloud.Client{
-		ControllerURL: controllerURL,
+		ControllerURL: env.ControllerURL,
 		HttpClient:    httpClient,
 	}
 
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
-	}
-
-	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", jobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
 
 	log.Printf("instance id: %s\n", instance.Id)
@@ -79,7 +73,7 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	log.Printf("node SSH port to VM: %s\n", nodeSshPort)
 
 	nodeId := instance.NodeId
-	node, err := controller.GetNode(cmd.Context(), ankacloud.GetNodeRequest{Id: nodeId})
+	node, err := controller.GetNode(ctx, ankacloud.GetNodeRequest{Id: nodeId})
 	if err != nil {
 		return fmt.Errorf("failed to get node %s: %w", nodeId, err)
 	}
@@ -101,13 +95,13 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("connected to %s\n", addr)
 
-	sshUserName, ok := os.LookupEnv(gitlab.VarSshUserName)
-	if !ok {
+	sshUserName := env.SSHUserName
+	if sshUserName == "" {
 		sshUserName = defaultSshUserName
 	}
 
-	sshPassword, ok := os.LookupEnv(gitlab.VarSshPassword)
-	if !ok {
+	sshPassword := env.SSHPassword
+	if sshPassword == "" {
 		sshPassword = defaultSshPassword
 	}
 

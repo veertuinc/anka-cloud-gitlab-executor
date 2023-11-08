@@ -1,9 +1,9 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -12,24 +12,23 @@ import (
 )
 
 var cleanupCommand = &cobra.Command{
-	Use:  "cleanup",
-	RunE: executeCleanup,
+	Use: "cleanup",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
+		if !ok {
+			return fmt.Errorf("failed to get environment from context")
+		}
+
+		return executeCleanup(cmd.Context(), env)
+	},
 }
 
-func executeCleanup(cmd *cobra.Command, args []string) error {
+func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stdout)
 
 	log.Println("Running cleanup stage")
 
-	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
-	}
-	if !strings.HasPrefix(controllerURL, "http") {
-		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
-	}
-
-	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
 		return fmt.Errorf("failed to initialize HTTP client config from environment variables: %w", err)
 	}
@@ -40,22 +39,17 @@ func executeCleanup(cmd *cobra.Command, args []string) error {
 	}
 
 	controller := ankacloud.Client{
-		ControllerURL: controllerURL,
+		ControllerURL: env.ControllerURL,
 		HttpClient:    httpClient,
 	}
 
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
-	}
-
-	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", jobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
 	log.Printf("instance id: %s\n", instance.Id)
 
-	err = controller.TerminateInstance(cmd.Context(), ankacloud.TerminateInstanceRequest{
+	err = controller.TerminateInstance(ctx, ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
 	})
 	if err != nil {
