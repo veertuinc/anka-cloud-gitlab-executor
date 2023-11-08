@@ -3,32 +3,26 @@ package ankacloud
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-const (
-	statusOK = "OK"
-)
-
-type response struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	Body    interface{} `json:"body,omitempty"`
-}
-
-type Client struct {
+type APIClient struct {
 	ControllerURL string
 	HttpClient    *http.Client
 }
 
-func (c *Client) parse(body []byte) (response, error) {
+func (c *APIClient) parse(body []byte) (response, error) {
 	var r response
 	err := json.Unmarshal(body, &r)
 	if err != nil {
@@ -50,7 +44,7 @@ func toQueryParams(params map[string]string) url.Values {
 	return query
 }
 
-func (c *Client) Post(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
+func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -91,7 +85,7 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 	return bodyBytes, nil
 }
 
-func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
+func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -131,7 +125,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{
 	return bodyBytes, nil
 }
 
-func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[string]string) ([]byte, error) {
+func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[string]string) ([]byte, error) {
 	if len(queryParams) > 0 {
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
@@ -168,4 +162,102 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
+}
+
+type APIClientConfig struct {
+	BaseURL             string
+	IsTLS               bool
+	CaCertPath          string
+	ClientCertPath      string
+	ClientCertKeyPath   string
+	SkipTLSVerify       bool
+	MaxIdleConnsPerHost int
+	RequestTimeout      time.Duration
+}
+
+func (c *APIClientConfig) certAuthEnabled() bool {
+	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
+}
+
+const (
+	defaultMaxIdleConnsPerHost = 20
+	defaultRequestTimeout      = 10 * time.Second
+)
+
+func NewAPIClient(config APIClientConfig) (*APIClient, error) {
+	httpClient := &http.Client{
+		Timeout: defaultRequestTimeout,
+	}
+
+	if config.RequestTimeout > 0 {
+		httpClient.Timeout = config.RequestTimeout
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConnsPerHost = defaultMaxIdleConnsPerHost
+
+	if config.MaxIdleConnsPerHost > 0 {
+		transport.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
+	}
+
+	if config.IsTLS {
+		tlsConfig, err := configureTLS(config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to configure TLS %+v: %w", config, err)
+		}
+		transport.TLSClientConfig = tlsConfig
+	}
+
+	httpClient.Transport = transport
+
+	return &APIClient{
+		ControllerURL: config.BaseURL,
+		HttpClient:    httpClient,
+	}, nil
+}
+
+func configureTLS(config APIClientConfig) (*tls.Config, error) {
+	log.Println("Handling TLS configuration")
+
+	tlsConfig := &tls.Config{}
+	caCertPool, _ := x509.SystemCertPool()
+	if caCertPool == nil {
+		caCertPool = x509.NewCertPool()
+	}
+	tlsConfig.RootCAs = caCertPool
+
+	if config.CaCertPath != "" {
+		if err := appendRootCert(config.CaCertPath, caCertPool); err != nil {
+			return nil, fmt.Errorf("failed to add CA cert from %q to pool: %w", config.CaCertPath, err)
+		}
+		log.Printf("Added CA cert at %q\n", config.CaCertPath)
+	}
+
+	if config.SkipTLSVerify {
+		log.Println("Allowing to skip server host verification")
+		tlsConfig.InsecureSkipVerify = true
+	}
+
+	if config.certAuthEnabled() {
+		cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientCertKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process key pair (cert at %q, key at %q): %w", config.ClientCertPath, config.ClientCertKeyPath, err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	return tlsConfig, nil
+}
+
+func appendRootCert(certFilePath string, caCertPool *x509.CertPool) error {
+	cert, err := os.ReadFile(certFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file at %q: %w", certFilePath, err)
+	}
+	ok := caCertPool.AppendCertsFromPEM(cert)
+	if !ok {
+		return fmt.Errorf("failed to add cert at %q to cert pool: %w", certFilePath, err)
+	}
+	return nil
 }

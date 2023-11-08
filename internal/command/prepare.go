@@ -40,20 +40,13 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		NodeGroupId: env.NodeGroupId,
 	}
 
-	httpClientConfig, err := getHttpClientConfig(env)
+	apiClientConfig := getAPIClientConfig(env)
+	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
+		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
 	}
 
-	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
-	if err != nil {
-		return fmt.Errorf("failed to initialize HTTP client with config +%v: %w", httpClientConfig, err)
-	}
-
-	controller := ankacloud.Client{
-		ControllerURL: env.ControllerURL,
-		HttpClient:    httpClient,
-	}
+	controller := ankacloud.NewController(apiClient)
 
 	log.Printf("creating instance with config: %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
