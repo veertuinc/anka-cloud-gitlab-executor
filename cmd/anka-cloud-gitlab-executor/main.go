@@ -18,13 +18,17 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	defer stop()
 
 	if buildFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarBuildFailureExitCode); ok {
 		if err != nil {
 			log.Printf("failed reading build failure exit code: %s", err)
-			os.Exit(buildFailureExitCode)
+			return buildFailureExitCode
 		}
 		buildFailureExitCode = buildFailureExitCodeEnvVar
 	}
@@ -32,7 +36,7 @@ func main() {
 	if systemFailureExitCodeEnvVar, ok, err := gitlab.GetIntVar(gitlab.VarSystemFailureExitCode); ok {
 		if err != nil {
 			log.Printf("failed reading system failure exit code: %s", err)
-			os.Exit(buildFailureExitCode)
+			return buildFailureExitCode
 		}
 		systemFailureExitCode = systemFailureExitCodeEnvVar
 	}
@@ -40,8 +44,9 @@ func main() {
 	if err := commands.Execute(ctx); err != nil {
 		log.Printf("error: %s", err)
 		if errors.Is(err, gitlab.ErrTransient) {
-			os.Exit(systemFailureExitCode)
+			return systemFailureExitCode
 		}
-		os.Exit(buildFailureExitCode)
+		return buildFailureExitCode
 	}
+	return 0
 }
