@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"veertu.com/anka-cloud-gitlab-executor/internal/commands"
+	"veertu.com/anka-cloud-gitlab-executor/internal/command"
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
@@ -41,7 +41,7 @@ func run() int {
 		systemFailureExitCode = systemFailureExitCodeEnvVar
 	}
 
-	if err := commands.Execute(ctx); err != nil {
+	if err := command.Execute(ctx); err != nil {
 		log.Printf("error: %s", err)
 		if errors.Is(err, gitlab.ErrTransient) {
 			return systemFailureExitCode
