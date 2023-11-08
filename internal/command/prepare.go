@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -20,50 +19,25 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running prepare stage")
 
-	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
+	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
 	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
-	}
-	if !strings.HasPrefix(controllerURL, "http") {
-		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
+		return fmt.Errorf("failed to get environment from context")
 	}
 
-	templateId, ok := os.LookupEnv(gitlab.VarTemplateId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarTemplateId)
-	}
-
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
+	if env.TemplateId == "" {
+		return fmt.Errorf("failed to get template id from environment: %w", gitlab.ErrMissingVar)
 	}
 
 	req := ankacloud.CreateInstanceRequest{
-		TemplateId: templateId,
-		ExternalId: jobId,
+		TemplateId:  env.TemplateId,
+		ExternalId:  env.GitlabJobId,
+		Tag:         env.TemplateTag,
+		NodeId:      env.NodeId,
+		Priority:    env.Priority,
+		NodeGroupId: env.NodeGroupId,
 	}
 
-	if tag, ok := os.LookupEnv(gitlab.VarTemplateTag); ok {
-		req.Tag = tag
-	}
-
-	if nodeId, ok := os.LookupEnv(gitlab.VarNodeId); ok {
-		req.NodeId = nodeId
-	}
-
-	if priority, ok, err := gitlab.GetIntVar(gitlab.VarPriority); ok {
-		if err != nil {
-			return fmt.Errorf("failed to parse priority: %w", err)
-		}
-
-		req.Priority = priority
-	}
-
-	if nodeGroupId, ok := os.LookupEnv(gitlab.VarNodeGroupId); ok {
-		req.NodeGroupId = nodeGroupId
-	}
-
-	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
 		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
 	}
@@ -74,7 +48,7 @@ func executePrepare(cmd *cobra.Command, args []string) error {
 	}
 
 	controller := ankacloud.Client{
-		ControllerURL: controllerURL,
+		ControllerURL: env.ControllerURL,
 		HttpClient:    httpClient,
 	}
 

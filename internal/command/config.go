@@ -32,13 +32,14 @@ func executeConfig(cmd *cobra.Command, args []string) error {
 	log.SetOutput(os.Stderr)
 	log.Println("Running config stage")
 
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
+	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
 	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
+		return fmt.Errorf("failed to get environment from context")
 	}
+
 	output := output{
-		BuildsDir:       fmt.Sprintf("/tmp/build/%s", jobId),
-		CacheDir:        fmt.Sprintf("/tmp/cache/%s", jobId),
+		BuildsDir:       fmt.Sprintf("/tmp/build/%s", env.GitlabJobId),
+		CacheDir:        fmt.Sprintf("/tmp/cache/%s", env.GitlabJobId),
 		BuildsDirShared: false,
 		Driver: driver{
 			Name:    "Anka Cloud Gitlab Executor",

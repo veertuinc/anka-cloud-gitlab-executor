@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -28,15 +27,12 @@ func executeRun(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	controllerURL, ok := os.LookupEnv(gitlab.VarControllerURL)
+	env, ok := cmd.Context().Value(contextKey("env")).(gitlab.Environment)
 	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarControllerURL)
-	}
-	if !strings.HasPrefix(controllerURL, "http") {
-		return fmt.Errorf("controller url %q missing http prefix", controllerURL)
+		return fmt.Errorf("failed to get environment from context")
 	}
 
-	httpClientConfig, err := httpClientConfigFromEnvVars(controllerURL)
+	httpClientConfig, err := getHttpClientConfig(env)
 	if err != nil {
 		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
 	}
@@ -47,18 +43,13 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 
 	controller := ankacloud.Client{
-		ControllerURL: controllerURL,
+		ControllerURL: env.ControllerURL,
 		HttpClient:    httpClient,
 	}
 
-	jobId, ok := os.LookupEnv(gitlab.VarGitlabJobId)
-	if !ok {
-		return fmt.Errorf("%w: %s", gitlab.ErrMissingVar, gitlab.VarGitlabJobId)
-	}
-
-	instance, err := controller.GetInstanceByExternalId(cmd.Context(), jobId)
+	instance, err := controller.GetInstanceByExternalId(cmd.Context(), env.GitlabJobId)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", jobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
 
 	log.Printf("instance id: %s\n", instance.Id)
@@ -101,13 +92,13 @@ func executeRun(cmd *cobra.Command, args []string) error {
 	}
 	log.Printf("connected to %s\n", addr)
 
-	sshUserName, ok := os.LookupEnv(gitlab.VarSshUserName)
-	if !ok {
+	sshUserName := env.SSHUserName
+	if sshUserName == "" {
 		sshUserName = defaultSshUserName
 	}
 
-	sshPassword, ok := os.LookupEnv(gitlab.VarSshPassword)
-	if !ok {
+	sshPassword := env.SSHPassword
+	if sshPassword == "" {
 		sshPassword = defaultSshPassword
 	}
 
