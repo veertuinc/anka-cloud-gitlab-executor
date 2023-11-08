@@ -82,13 +82,13 @@ type InstanceWrapper struct {
 func (c *Client) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
 	body, err := c.Get(ctx, "/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instance %s: %w", req.Id, err)
+		return nil, fmt.Errorf("failed to get instance %s: %w", req.Id, err)
 	}
 
 	var response getInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
+		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
 	return &response.Instance, nil
@@ -102,13 +102,13 @@ func (c *Client) CreateInstance(ctx context.Context, payload CreateInstanceReque
 
 	body, err := c.Post(ctx, "/api/v1/vm", payload)
 	if err != nil {
-		return "", fmt.Errorf("failed creating instance %+v: %w", payload, err)
+		return "", fmt.Errorf("failed to create instance %+v: %w", payload, err)
 	}
 
 	var response createInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return "", fmt.Errorf("failed parsing response body %q: %w", string(body), err)
+		return "", fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
 	return response.InstanceIds[0], nil
@@ -125,7 +125,7 @@ func (c *Client) WaitForInstanceToBeScheduled(ctx context.Context, instanceId st
 		case <-time.After(pollingInterval):
 			instance, err := c.GetInstance(ctx, GetInstanceRequest{Id: instanceId})
 			if err != nil {
-				return fmt.Errorf("failed getting instance %q status: %w", instanceId, err)
+				return fmt.Errorf("failed to get instance %q status: %w", instanceId, err)
 			}
 
 			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
@@ -144,13 +144,13 @@ func (c *Client) WaitForInstanceToBeScheduled(ctx context.Context, instanceId st
 func (c *Client) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
 	body, err := c.Delete(ctx, "/api/v1/vm", payload)
 	if err != nil {
-		return fmt.Errorf("failed terminating instance %+v: %w", payload, err)
+		return fmt.Errorf("failed to terminate instance %+v: %w", payload, err)
 	}
 
 	var response terminateInstanceResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return fmt.Errorf("failed parsing response body %q: %w", string(body), err)
+		return fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
 	return nil
@@ -160,13 +160,13 @@ func (c *Client) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error)
 
 	body, err := c.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instances: %w", err)
+		return nil, fmt.Errorf("failed to get instances: %w", err)
 	}
 
 	var response getAllInstancesResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
+		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
 	return response.Instances, nil
@@ -175,7 +175,7 @@ func (c *Client) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error)
 func (c *Client) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting instances: %w", err)
+		return nil, fmt.Errorf("failed to get instances: %w", err)
 	}
 
 	for _, instance := range instances {

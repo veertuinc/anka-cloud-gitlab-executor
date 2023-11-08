@@ -27,22 +27,26 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 Check out the [full configuration spec](https://docs.gitlab.com/runner/executors/custom.html#configuration) for more info
 
 ### Variables:
-> All of our variables are parsed as strings, since Gitlab is stating: "To ensure consistent behavior, you should always put variable values in single or double quotes." [Reference](https://docs.gitlab.com/ee/ci/variables/)
+All variables are parsed as strings, since Gitlab is stating: "To ensure consistent behavior, you should always put variable values in single or double quotes." [Reference](https://docs.gitlab.com/ee/ci/variables/)
 
-| Variable name | Required | Description |
-| ------------- |:--------:| ----------- |
-| ANKA_CLOUD_CONTROLLER_URL |     ✅ | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
-| ANKA_CLOUD_TEMPLATE_ID | ✅ | VM Template ID to use. Must exist on the Registry and have SSH port forwarding |
-| ANKA_CLOUD_TEMPLATE_TAG | ❌ | Template tag to use |
-| ANKA_CLOUD_NODE_ID | ❌ | Run VM on this specific node |
-| ANKA_CLOUD_PRIORITY | ❌ | Priority in range 1-10000 (lower is more urgent) |
-| ANKA_CLOUD_NODE_GROUP_ID | ❌ | Run the VM on a specific Node Group, by Group ID |
-| ANKA_CLOUD_SKIP_TLS_VERIFY | ❌ | If Controller is using a self-signed cert, this allows the Runner to skip validation of the certificate |
-| ANKA_CLOUD_CA_CERT_PATH | ❌ | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
-| ANKA_CLOUD_CLIENT_CERT_PATH | ❌ | If Client Cert Authentication is enabled, this is the path for the Certificate. **_The path is accessed locally by the Runner_** |
-| ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
-| SSH_USER_NAME | ❌ | SSH user name to use inside VM. Defaults to "anka" |
-| SSH_PASSWORD | ❌ | SSH password to use inside VM. Defaults to "admin" |
+Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False"
+
+| Variable name | Required | Type | Description |
+| ------------- |:--------:|:----:| ----------- |
+| ANKA_CLOUD_CONTROLLER_URL |     ✅ | String | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
+| ANKA_CLOUD_TEMPLATE_ID | ✅ | String | VM Template ID to use. Must exist on the Registry and have SSH port forwarding |
+| ANKA_CLOUD_DEBUG |     ❌ | Boolean | Output Anka Cloud debug info |
+| ANKA_CLOUD_TEMPLATE_TAG | ❌ | String | Template tag to use |
+| ANKA_CLOUD_NODE_ID | ❌ | String | Run VM on this specific node |
+| ANKA_CLOUD_PRIORITY | ❌ | Number | Priority in range 1-10000 (lower is more urgent) |
+| ANKA_CLOUD_NODE_GROUP_ID | ❌ | String | Run the VM on a specific Node Group, by Group ID |
+| ANKA_CLOUD_SKIP_TLS_VERIFY | ❌ | Boolean | If Controller is using a self-signed cert, this allows the Runner to skip validation of the certificate |
+| ANKA_CLOUD_CA_CERT_PATH | ❌ | String | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
+| ANKA_CLOUD_CLIENT_CERT_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Certificate. **_The path is accessed locally by the Runner_** |
+| ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
+| SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka" |
+| SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
+
 
 Example basic pipeline:
 ```

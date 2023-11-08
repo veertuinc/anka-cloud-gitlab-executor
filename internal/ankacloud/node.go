@@ -21,13 +21,13 @@ type getNodeResponse struct {
 func (c *Client) GetNode(ctx context.Context, req GetNodeRequest) (*Node, error) {
 	body, err := c.Get(ctx, "/api/v1/node", map[string]string{"id": req.Id})
 	if err != nil {
-		return nil, fmt.Errorf("failed getting node %q: %w", req.Id, err)
+		return nil, fmt.Errorf("failed to get node %q: %w", req.Id, err)
 	}
 
 	var response getNodeResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing response body %q: %w", string(body), err)
+		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
 	if len(response.Nodes) == 0 {

@@ -49,7 +49,7 @@ func NewHTTPClient(config *HttpClientConfig) (*http.Client, error) {
 	if config.IsTLS {
 		tlsConfig, err := configureTLS(config)
 		if err != nil {
-			return nil, fmt.Errorf("could not configure TLS %+v: %w", config, err)
+			return nil, fmt.Errorf("failed to configure TLS %+v: %w", config, err)
 		}
 		transport.TLSClientConfig = tlsConfig
 	}
@@ -84,7 +84,7 @@ func configureTLS(config *HttpClientConfig) (*tls.Config, error) {
 	if config.certAuthEnabled() {
 		cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientCertKeyPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed processing key pair (cert at %q, key at %q): %w", config.ClientCertPath, config.ClientCertKeyPath, err)
+			return nil, fmt.Errorf("failed to process key pair (cert at %q, key at %q): %w", config.ClientCertPath, config.ClientCertKeyPath, err)
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{cert}
@@ -96,11 +96,11 @@ func configureTLS(config *HttpClientConfig) (*tls.Config, error) {
 func appendRootCert(certFilePath string, caCertPool *x509.CertPool) error {
 	cert, err := os.ReadFile(certFilePath)
 	if err != nil {
-		return fmt.Errorf("error reading %q: %w", certFilePath, err)
+		return fmt.Errorf("failed to read file at %q: %w", certFilePath, err)
 	}
 	ok := caCertPool.AppendCertsFromPEM(cert)
 	if !ok {
-		return fmt.Errorf("error adding cert from %q to cert pool: %w", certFilePath, err)
+		return fmt.Errorf("failed to add cert at %q to cert pool: %w", certFilePath, err)
 	}
 	return nil
 }
