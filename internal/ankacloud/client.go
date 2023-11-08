@@ -61,11 +61,9 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 		return nil, fmt.Errorf("failed to create POST request to %q with body %+v: %w", endpointUrl, payload, err)
 	}
 
-	if len(c.CustomHttpHeaders) > 0 {
-		for k, v := range c.CustomHttpHeaders {
-			log.Debugf("Setting custom header %s: %s\n", k, v)
-			req.Header.Set(k, v)
-		}
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -109,11 +107,9 @@ func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interfa
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	if len(c.CustomHttpHeaders) > 0 {
-		for k, v := range c.CustomHttpHeaders {
-			log.Debugf("Setting custom header %s: %s\n", k, v)
-			req.Header.Set(k, v)
-		}
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -154,11 +150,9 @@ func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[st
 		return nil, fmt.Errorf("failed to create GET request to %q: %w", endpointUrl, err)
 	}
 
-	if len(c.CustomHttpHeaders) > 0 {
-		for k, v := range c.CustomHttpHeaders {
-			log.Debugf("Setting custom header %s: %s\n", k, v)
-			req.Header.Set(k, v)
-		}
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
 	}
 
 	r, err := c.HttpClient.Do(req)
