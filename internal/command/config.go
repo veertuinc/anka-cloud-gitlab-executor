@@ -46,7 +46,7 @@ func executeConfig(ctx context.Context, env gitlab.Environment) error {
 		BuildsDirShared: false,
 		Driver: driver{
 			Name:    "Anka Cloud Gitlab Executor",
-			Version: "1.0.0", // TODO incorporate versioning into build scripts and here also
+			Version: version.Get(),
 		},
 	}
 	jsonBytes, err := json.MarshalIndent(&output, "", "  ")
