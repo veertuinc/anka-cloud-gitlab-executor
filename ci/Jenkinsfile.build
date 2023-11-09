@@ -8,7 +8,7 @@ pipeline {
             steps {
                 script {
                     docker.image('goreleaser/goreleaser:latest').inside('--entrypoint "" --env GOCACHE=/tmp/.gocache') {
-                        sh 'goreleaser build --clean'
+                        sh 'goreleaser build --clean --snapshot'
                     }
                 }
             }
