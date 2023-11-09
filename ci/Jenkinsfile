@@ -6,6 +6,7 @@ pipeline {
     stages {
         stage('Release') {
             steps {
+                sh "git describe --exact-match --tags HEAD" // fails if HEAD commit is not tagged
                 withCredentials([
                   string(credentialsId: "AnkaCloudGitlabExecutorGithubToken", variable: 'GITHUB_TOKEN'),
               ]) {
