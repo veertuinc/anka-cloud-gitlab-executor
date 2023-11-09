@@ -1,4 +1,4 @@
-module veertu.com/anka-cloud-gitlab-executor
+module github.com/veertuinc/anka-cloud-gitlab-executor
 
 go 1.20
 

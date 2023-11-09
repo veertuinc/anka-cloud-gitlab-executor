@@ -3,8 +3,8 @@ package command
 import (
 	"strings"
 
-	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/ankacloud"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/gitlab"
 )
 
 func getAPIClientConfig(env gitlab.Environment) ankacloud.APIClientConfig {

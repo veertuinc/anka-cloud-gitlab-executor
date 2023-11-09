@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"veertu.com/anka-cloud-gitlab-executor/internal/log"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
 type controller struct {

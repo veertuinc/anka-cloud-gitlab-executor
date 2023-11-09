@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"veertu.com/anka-cloud-gitlab-executor/internal/ankacloud"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
-	"veertu.com/anka-cloud-gitlab-executor/internal/log"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/ankacloud"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/gitlab"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
 var prepareCommand = &cobra.Command{

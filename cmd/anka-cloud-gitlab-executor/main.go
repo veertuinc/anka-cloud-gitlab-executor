@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"veertu.com/anka-cloud-gitlab-executor/internal/command"
-	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
-	"veertu.com/anka-cloud-gitlab-executor/internal/log"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/command"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/gitlab"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
 var (
