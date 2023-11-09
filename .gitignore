@@ -1,3 +1,5 @@
 .idea
 .vscode
 anka-gle
+dist/
+vendor/
