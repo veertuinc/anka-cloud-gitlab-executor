@@ -3,7 +3,7 @@
 A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custom.html) utilizing [Anka Build Cloud](https://veertu.com/anka-build/) to run your Gitlab jobs on macOS VMs.
 
 ## Pre-requirements:
-1. Install and Register (at least one) self-managed Gitlab Runner. See [here](https://docs.gitlab.com/runner/install/index.html) for more info.
+1. Install and Register a self-managed Gitlab Runner. See [here](https://docs.gitlab.com/runner/install/index.html) for more info.
 2. An active [Anka Build Cloud](https://veertu.com/anka-build/)
 
 ## Configuration:
@@ -73,10 +73,18 @@ test-job:
 Example pipeline with all available configurations:
 ```
 variables:
-  ANKA_CLOUD_CONTROLLER_URL: "http://anka.contoller:8090"
+  ANKA_CLOUD_CONTROLLER_URL: "https://anka.contoller:8090"
   ANKA_CLOUD_TEMPLATE_ID: "8c592f53-65a4-444e-9342-79d3ff07837c"
   ANKA_CLOUD_TEMPLATE_TAG: "builder"
   ANKA_CLOUD_NODE_ID: "038d5b6f-2e54-44fd-a8bc-53629b086887"
+  ANKA_CLOUD_DEBUG: "true"
+  ANKA_CLOUD_SKIP_TLS_VERIFY: "TRUE"
+  ANKA_CLOUD_CA_CERT_PATH: "/mnt/certs/ca.pem"
+  ANKA_CLOUD_CLIENT_CERT_PATH: "/mnt/certs/devops-crt.pem"
+  ANKA_CLOUD_CLIENT_CERT_KEY_PATH: "/mnt/certs/devops-key.pem"
+  ANKA_CLOUD_SSH_USER_NAME: "veertu"
+  ANKA_CLOUD_SSH_PASSWORD: "P@$$w0rd"
+  ANKA_CLOUD_CUSTOM_HTTP_HEADERS: "{\"X-CUSTOM-HEADER\": \"custom-value\"}"
   
 build-job-1:
   stage: build
