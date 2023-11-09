@@ -28,6 +28,11 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 
 	log.Println("Running cleanup stage")
 
+	if env.KeepAliveOnError && env.GitlabJobStatus == gitlab.JobStatusFailed {
+		log.Println("Keeping VM alive on error")
+		return nil
+	}
+
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {

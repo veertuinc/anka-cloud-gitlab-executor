@@ -29,9 +29,11 @@ var (
 	varSshUserName       = ankaVar("SSH_USER_NAME")
 	varSshPassword       = ankaVar("SSH_PASSWORD")
 	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
+	varKeepAliveOnError  = ankaVar("KEEP_ALIVE_ON_ERROR")
 
 	// Gitlab vars
-	varGitlabJobId = gitlabVar("CI_JOB_ID")
+	varGitlabJobId     = gitlabVar("CI_JOB_ID")
+	varGitlabJobStatus = gitlabVar("CI_JOB_STATUS")
 )
 
 type Environment struct {
@@ -50,7 +52,18 @@ type Environment struct {
 	SSHPassword       string
 	GitlabJobId       string
 	CustomHttpHeaders map[string]string
+	KeepAliveOnError  bool
+	GitlabJobStatus   jobStatus
 }
+
+type jobStatus string
+
+var (
+	JobStatusSuccess  jobStatus = "success"
+	JobStatusFailed   jobStatus = "failed"
+	JobStatusCanceled jobStatus = "canceled"
+	JobStatusRunning  jobStatus = "running"
+)
 
 func InitEnv() (Environment, error) {
 	e := Environment{}
@@ -75,6 +88,7 @@ func InitEnv() (Environment, error) {
 	e.CaCertPath = os.Getenv(varCaCertPath)
 	e.ClientCertPath = os.Getenv(varClientCertPath)
 	e.ClientCertKeyPath = os.Getenv(varClientCertKeyPath)
+	e.GitlabJobStatus = jobStatus(os.Getenv(varGitlabJobStatus))
 
 	if priority, ok, err := GetIntEnvVar(varPriority); ok {
 		if err != nil {
@@ -92,7 +106,7 @@ func InitEnv() (Environment, error) {
 
 	if skip, ok, err := GetBoolEnvVar(varSkipTLSVerify); ok {
 		if err != nil {
-			return e, fmt.Errorf("failed to read debug variable: %w", err)
+			return e, fmt.Errorf("failed to read skip TLS verification variable: %w", err)
 		}
 		e.SkipTLSVerify = skip
 	}
@@ -102,6 +116,13 @@ func InitEnv() (Environment, error) {
 		if err != nil {
 			return e, fmt.Errorf("failed to parse custom http headers %q: %w", customHttpHeaders, err)
 		}
+	}
+
+	if keepAlive, ok, err := GetBoolEnvVar(varKeepAliveOnError); ok {
+		if err != nil {
+			return e, fmt.Errorf("failed to read keep alive on error variable: %w", err)
+		}
+		e.KeepAliveOnError = keepAlive
 	}
 
 	return e, nil
