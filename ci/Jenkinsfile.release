@@ -1,0 +1,21 @@
+pipeline {
+    agent { node {
+            label 'cloud_container_host'
+        }
+    }
+    stages {
+        stage('Release') {
+            steps {
+                withCredentials([
+                  string(credentialsId: "AnkaCloudGitlabExecutorGithubToken", variable: 'GITHUB_TOKEN'),
+              ]) {
+                    script {
+                        docker.image('goreleaser/goreleaser:latest').inside('--entrypoint "" --env GOCACHE=/tmp/.gocache') {
+                            sh 'goreleaser release --clean'
+                        }
+                    }
+              }
+            }
+        }
+    }
+}
