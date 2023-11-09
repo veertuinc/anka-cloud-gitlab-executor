@@ -31,6 +31,13 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		return fmt.Errorf("failed to get template id from environment: %w", gitlab.ErrMissingVar)
 	}
 
+	apiClientConfig := getAPIClientConfig(env)
+	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
+	if err != nil {
+		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
+	}
+	controller := ankacloud.NewController(apiClient)
+
 	req := ankacloud.CreateInstanceRequest{
 		TemplateId:  env.TemplateId,
 		ExternalId:  env.GitlabJobId,
@@ -39,14 +46,6 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		Priority:    env.Priority,
 		NodeGroupId: env.NodeGroupId,
 	}
-
-	apiClientConfig := getAPIClientConfig(env)
-	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
-	if err != nil {
-		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
-	}
-
-	controller := ankacloud.NewController(apiClient)
 
 	log.Printf("creating instance with config: %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
