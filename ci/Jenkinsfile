@@ -6,13 +6,13 @@ pipeline {
     stages {
         stage('Release') {
             steps {
-                sh "git describe --exact-match --tags HEAD" // fails if HEAD commit is not tagged
                 withCredentials([
                   string(credentialsId: "AnkaCloudGitlabExecutorGithubToken", variable: 'GITHUB_TOKEN'),
               ]) {
                     script {
                         docker.image('goreleaser/goreleaser:latest').inside('--entrypoint "" --env GOCACHE=/tmp/.gocache') {
-                            sh 'goreleaser release --clean --snapshot'
+                            sh "git describe --exact-match --tags HEAD" // fails if HEAD commit is not tagged
+                            sh 'goreleaser release --clean'
                         }
                     }
               }
