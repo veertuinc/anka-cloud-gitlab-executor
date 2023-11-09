@@ -2,11 +2,11 @@
 
 A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custom.html) utilizing [Anka Build Cloud](https://veertu.com/anka-build/) to run your Gitlab jobs on macOS VMs.
 
-## Pre-requirements:
+## Pre-requirements
 1. Install and Register a self-managed Gitlab Runner. See [here](https://docs.gitlab.com/runner/install/index.html) for more info.
-2. An active [Anka Build Cloud](https://veertu.com/anka-build/)
+2. An active [Anka Build Cloud](https://veertu.com/anka-build/), with a template with ssh port forwarding configured.
 
-## Configuration:
+## Configuration
 1. Download the binary to the same machine your Gitlab Runner is running on.
 2. Add the following `[runners.custom]` block to Gitlab Runner configuration:
     > By default, runner config is at `~/.gitlab-runner/config.toml`
@@ -26,7 +26,7 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 
 Check out the [full configuration spec](https://docs.gitlab.com/runner/executors/custom.html#configuration) for more info
 
-### Variables:
+### Variables
 All variables are parsed as strings, since Gitlab is stating: "To ensure consistent behavior, you should always put variable values in single or double quotes." [Reference](https://docs.gitlab.com/ee/ci/variables/)
 
 Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False"
@@ -48,7 +48,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADER | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
 
-
+### Examples
 Example basic pipeline:
 ```
 variables:
@@ -123,3 +123,20 @@ integration-test-job:
   script:
     - echo "running integration tests"
 ```
+
+
+## Development
+
+### Overview
+Please read Gitlab Custom Executor docs first [here](https://docs.gitlab.com/runner/executors/custom.html)
+
+This project produces a single binary, that accepts the current Gitlab stage as its first argument:
+1. Config
+2. Prepare (Creates the Instance on the Anka Cloud, waiting for it to get scheduled)
+3. Run (Creates a remote shell on the VM, and pushes Gitlab provided script with stdin)
+4. Cleanup (Performs Termination request to the Anka Cloud Controller)
+
+### Creating local dev environment
+1. Run a gitlab runner locally
+2. Build the project: `go build -o anka-gle cmd/anka-cloud-gitlab-executor/main.go`
+3. Update config.toml as instructed [here](#configuration)
