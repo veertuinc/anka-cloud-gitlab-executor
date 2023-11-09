@@ -4,62 +4,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net/http"
+	"log"
 	"os"
-	"time"
-
-	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
-type HttpClientConfig struct {
-	IsTLS               bool
-	CaCertPath          string
-	ClientCertPath      string
-	ClientCertKeyPath   string
-	SkipTLSVerify       bool
-	MaxIdleConnsPerHost int
-	RequestTimeout      time.Duration
-}
-
-func (c *HttpClientConfig) certAuthEnabled() bool {
-	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
-}
-
-const (
-	defaultMaxIdleConnsPerHost = 20
-	defaultRequestTimeout      = 10 * time.Second
-)
-
-func NewHTTPClient(config *HttpClientConfig) (*http.Client, error) {
-	client := &http.Client{
-		Timeout: defaultRequestTimeout,
-	}
-
-	if config.RequestTimeout > 0 {
-		client.Timeout = config.RequestTimeout
-	}
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConnsPerHost = defaultMaxIdleConnsPerHost
-
-	if config.MaxIdleConnsPerHost > 0 {
-		transport.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
-	}
-
-	if config.IsTLS {
-		tlsConfig, err := configureTLS(config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure TLS %+v: %w", config, err)
-		}
-		transport.TLSClientConfig = tlsConfig
-	}
-
-	client.Transport = transport
-
-	return client, nil
-}
-
-func configureTLS(config *HttpClientConfig) (*tls.Config, error) {
+func configureTLS(config APIClientConfig) (*tls.Config, error) {
 	log.Println("Handling TLS configuration")
 
 	tlsConfig := &tls.Config{}

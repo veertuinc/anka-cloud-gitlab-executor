@@ -4,11 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
+
+type controller struct {
+	APIClient *APIClient
+}
+
+type Node struct {
+	IP string `json:"ip_address"`
+}
 
 type InstanceState string
 
@@ -21,40 +28,6 @@ const (
 	StateError       InstanceState = "Error"
 	StatePushing     InstanceState = "Pushing"
 )
-
-type CreateInstanceRequest struct {
-	TemplateId  string `json:"vmid"`
-	ExternalId  string `json:"external_id,omitempty"`
-	Tag         string `json:"tag,omitempty"`
-	NodeId      string `json:"node_id,omitempty"`
-	Priority    int    `json:"priority,omitempty"`
-	NodeGroupId string `json:"group_id,omitempty"`
-}
-
-type createInstanceResponse struct {
-	response
-	InstanceIds []string `json:"body"`
-}
-
-type GetInstanceRequest struct {
-	Id string
-}
-
-type getInstanceResponse struct {
-	response
-	Instance Instance `json:"body"`
-}
-
-type TerminateInstanceRequest struct {
-	Id string `json:"id"`
-}
-
-type terminateInstanceResponse response
-
-type getAllInstancesResponse struct {
-	response
-	Instances []InstanceWrapper `json:"body"`
-}
 
 type VM struct {
 	PortForwardingRules []PortForwardingRule `json:"port_forwarding,omitempty"`
@@ -79,8 +52,32 @@ type InstanceWrapper struct {
 	Instance   *Instance `json:"vm,omitempty"`
 }
 
-func (c *Client) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
-	body, err := c.Get(ctx, "/api/v1/vm", map[string]string{"id": req.Id})
+func NewController(apiClient *APIClient) *controller {
+	return &controller{
+		APIClient: apiClient,
+	}
+}
+func (c *controller) GetNode(ctx context.Context, req GetNodeRequest) (*Node, error) {
+	body, err := c.APIClient.Get(ctx, "/api/v1/node", map[string]string{"id": req.Id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node %q: %w", req.Id, err)
+	}
+
+	var response getNodeResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
+	}
+
+	if len(response.Nodes) == 0 {
+		return nil, fmt.Errorf("node %s not found", req.Id)
+	}
+
+	return &response.Nodes[0], nil
+}
+
+func (c *controller) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
+	body, err := c.APIClient.Get(ctx, "/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instance %s: %w", req.Id, err)
 	}
@@ -94,13 +91,13 @@ func (c *Client) GetInstance(ctx context.Context, req GetInstanceRequest) (*Inst
 	return &response.Instance, nil
 }
 
-func (c *Client) CreateInstance(ctx context.Context, payload CreateInstanceRequest) (string, error) {
+func (c *controller) CreateInstance(ctx context.Context, payload CreateInstanceRequest) (string, error) {
 
 	if payload.Priority < 0 || payload.Priority > 10000 {
 		return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", payload.Priority)
 	}
 
-	body, err := c.Post(ctx, "/api/v1/vm", payload)
+	body, err := c.APIClient.Post(ctx, "/api/v1/vm", payload)
 	if err != nil {
 		return "", fmt.Errorf("failed to create instance %+v: %w", payload, err)
 	}
@@ -114,7 +111,7 @@ func (c *Client) CreateInstance(ctx context.Context, payload CreateInstanceReque
 	return response.InstanceIds[0], nil
 }
 
-func (c *Client) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) error {
+func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) error {
 	const pollingInterval = 3 * time.Second
 
 	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
@@ -141,8 +138,8 @@ func (c *Client) WaitForInstanceToBeScheduled(ctx context.Context, instanceId st
 	}
 }
 
-func (c *Client) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
-	body, err := c.Delete(ctx, "/api/v1/vm", payload)
+func (c *controller) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
+	body, err := c.APIClient.Delete(ctx, "/api/v1/vm", payload)
 	if err != nil {
 		return fmt.Errorf("failed to terminate instance %+v: %w", payload, err)
 	}
@@ -156,9 +153,9 @@ func (c *Client) TerminateInstance(ctx context.Context, payload TerminateInstanc
 	return nil
 }
 
-func (c *Client) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error) {
+func (c *controller) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error) {
 
-	body, err := c.Get(ctx, "/api/v1/vm", nil)
+	body, err := c.APIClient.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instances: %w", err)
 	}
@@ -172,7 +169,7 @@ func (c *Client) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error)
 	return response.Instances, nil
 }
 
-func (c *Client) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
+func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instances: %w", err)

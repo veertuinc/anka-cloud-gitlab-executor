@@ -35,20 +35,13 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	log.Printf("Running run stage %s\n", args[1])
 
-	httpClientConfig, err := getHttpClientConfig(env)
+	apiClientConfig := getAPIClientConfig(env)
+	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initialize HTTP client config: %w", err)
+		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
 	}
 
-	httpClient, err := ankacloud.NewHTTPClient(httpClientConfig)
-	if err != nil {
-		return fmt.Errorf("failed to initialize HTTP client with config +%v: %w", httpClientConfig, err)
-	}
-
-	controller := ankacloud.Client{
-		ControllerURL: env.ControllerURL,
-		HttpClient:    httpClient,
-	}
+	controller := ankacloud.NewController(apiClient)
 
 	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
 	if err != nil {

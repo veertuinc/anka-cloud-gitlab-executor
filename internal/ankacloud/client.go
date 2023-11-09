@@ -8,27 +8,24 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 	"veertu.com/anka-cloud-gitlab-executor/internal/log"
 )
 
 const (
-	statusOK = "OK"
+	defaultMaxIdleConnsPerHost = 20
+	defaultRequestTimeout      = 10 * time.Second
 )
 
-type response struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	Body    interface{} `json:"body,omitempty"`
+type APIClient struct {
+	ControllerURL     string
+	HttpClient        *http.Client
+	CustomHttpHeaders map[string]string
 }
 
-type Client struct {
-	ControllerURL string
-	HttpClient    *http.Client
-}
-
-func (c *Client) parse(body []byte) (response, error) {
+func (c *APIClient) parse(body []byte) (response, error) {
 	var r response
 	err := json.Unmarshal(body, &r)
 	if err != nil {
@@ -50,7 +47,7 @@ func toQueryParams(params map[string]string) url.Values {
 	return query
 }
 
-func (c *Client) Post(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
+func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -62,6 +59,11 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointUrl, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create POST request to %q with body %+v: %w", endpointUrl, payload, err)
+	}
+
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -91,7 +93,7 @@ func (c *Client) Post(ctx context.Context, endpoint string, payload interface{})
 	return bodyBytes, nil
 }
 
-func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
+func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
@@ -104,6 +106,12 @@ func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{
 		return nil, fmt.Errorf("failed to create DELETE request to %q with payload %+v: %w", endpointUrl, payload, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
+	}
+
 	r, err := c.HttpClient.Do(req)
 	if err != nil {
 		if e, ok := err.(*url.Error); ok && e.Timeout() {
@@ -131,7 +139,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, payload interface{
 	return bodyBytes, nil
 }
 
-func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[string]string) ([]byte, error) {
+func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[string]string) ([]byte, error) {
 	if len(queryParams) > 0 {
 		params := toQueryParams(queryParams)
 		endpoint = fmt.Sprintf("%s?%s", endpoint, params.Encode())
@@ -140,6 +148,11 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GET request to %q: %w", endpointUrl, err)
+	}
+
+	for k, v := range c.CustomHttpHeaders {
+		log.Debugf("Setting custom header %s: %s\n", k, v)
+		req.Header.Set(k, v)
 	}
 
 	r, err := c.HttpClient.Do(req)
@@ -168,4 +181,53 @@ func (c *Client) Get(ctx context.Context, endpoint string, queryParams map[strin
 	log.Debugf("GET request to %s\nResponse status code: %d\nRaw body: %+v\n", endpoint, r.StatusCode, string(bodyBytes))
 
 	return bodyBytes, nil
+}
+
+type APIClientConfig struct {
+	BaseURL             string
+	IsTLS               bool
+	CaCertPath          string
+	ClientCertPath      string
+	ClientCertKeyPath   string
+	SkipTLSVerify       bool
+	MaxIdleConnsPerHost int
+	RequestTimeout      time.Duration
+	CustomHttpHeaders   map[string]string
+}
+
+func (c *APIClientConfig) certAuthEnabled() bool {
+	return c.ClientCertKeyPath != "" && c.ClientCertPath != ""
+}
+
+func NewAPIClient(config APIClientConfig) (*APIClient, error) {
+	httpClient := &http.Client{
+		Timeout: defaultRequestTimeout,
+	}
+
+	if config.RequestTimeout > 0 {
+		httpClient.Timeout = config.RequestTimeout
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConnsPerHost = defaultMaxIdleConnsPerHost
+
+	if config.MaxIdleConnsPerHost > 0 {
+		transport.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
+	}
+
+	if config.IsTLS {
+		tlsConfig, err := configureTLS(config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to configure TLS %+v: %w", config, err)
+		}
+		transport.TLSClientConfig = tlsConfig
+	}
+
+	httpClient.Transport = transport
+
+	return &APIClient{
+		ControllerURL:     config.BaseURL,
+		CustomHttpHeaders: config.CustomHttpHeaders,
+		HttpClient:        httpClient,
+	}, nil
 }

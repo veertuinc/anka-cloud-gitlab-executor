@@ -7,29 +7,35 @@ import (
 	"veertu.com/anka-cloud-gitlab-executor/internal/gitlab"
 )
 
-func getHttpClientConfig(env gitlab.Environment) (*ankacloud.HttpClientConfig, error) {
-	httpClientConfig := ankacloud.HttpClientConfig{}
+func getAPIClientConfig(env gitlab.Environment) ankacloud.APIClientConfig {
+	apiClientConfig := ankacloud.APIClientConfig{
+		BaseURL: env.ControllerURL,
+	}
+
+	if env.CustomHttpHeaders != nil {
+		apiClientConfig.CustomHttpHeaders = env.CustomHttpHeaders
+	}
 
 	if strings.HasPrefix(env.ControllerURL, "https") {
-		httpClientConfig.IsTLS = true
+		apiClientConfig.IsTLS = true
 
 		if env.CaCertPath != "" {
-			httpClientConfig.CaCertPath = env.CaCertPath
+			apiClientConfig.CaCertPath = env.CaCertPath
 		}
 
 		if env.SkipTLSVerify {
-			httpClientConfig.SkipTLSVerify = env.SkipTLSVerify
+			apiClientConfig.SkipTLSVerify = env.SkipTLSVerify
 		}
 
 		if env.ClientCertPath != "" {
-			httpClientConfig.ClientCertPath = env.ClientCertPath
+			apiClientConfig.ClientCertPath = env.ClientCertPath
 		}
 
 		if env.ClientCertKeyPath != "" {
-			httpClientConfig.ClientCertKeyPath = env.ClientCertKeyPath
+			apiClientConfig.ClientCertKeyPath = env.ClientCertKeyPath
 		}
 
 	}
 
-	return &httpClientConfig, nil
+	return apiClientConfig
 }
