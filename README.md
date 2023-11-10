@@ -12,13 +12,13 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
     > By default, runner config is at `~/.gitlab-runner/config.toml`
     ```
     [runners.custom]
-        config_exec = "PATH_TO_BINARY_HERE"
+        config_exec = "/path/to/anka-cloud-gitlab-executor"
         config_args = ["config"]
-        prepare_exec = "PATH_TO_BINARY_HERE"
+        prepare_exec = "/path/to/anka-cloud-gitlab-executor"
         prepare_args = ["prepare"]
-        run_exec = "PATH_TO_BINARY_HERE"
+        run_exec = "/path/to/anka-cloud-gitlab-executor"
         run_args = ["run"]
-        cleanup_exec = "PATH_TO_BINARY_HERE"
+        cleanup_exec = "/path/to/anka-cloud-gitlab-executor"
         cleanup_args = ["cleanup"]
     ```
 3. Add `executor = "custom"` to `[[runners]]` block
@@ -47,7 +47,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka" |
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADER | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
-| ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable |
+| ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable. **There will be no indication for this behavior on the Job's output unless Gitlab Debug is enabled** |
 
 ### Examples
 Example basic pipeline:
@@ -139,5 +139,5 @@ This project produces a single binary, that accepts the current Gitlab stage as 
 
 ### Creating local dev environment
 1. Run a gitlab runner locally
-2. Build the project: `go build -o anka-gle cmd/anka-cloud-gitlab-executor/main.go`
+2. Build the project: `go build cmd/anka-cloud-gitlab-executor/main.go`
 3. Update config.toml as instructed [here](#configuration)
