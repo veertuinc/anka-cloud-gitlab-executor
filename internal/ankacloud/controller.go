@@ -153,7 +153,7 @@ func (c *controller) TerminateInstance(ctx context.Context, payload TerminateIns
 	return nil
 }
 
-func (c *controller) GetAllInstances(ctx context.Context) ([]InstanceWrapper, error) {
+func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 	body, err := c.APIClient.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
@@ -166,7 +166,12 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]InstanceWrapper, er
 		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
-	return response.Instances, nil
+	var instances []Instance
+	for _, instanceWrapper := range response.Instances {
+		instances = append(instances, *instanceWrapper.Instance)
+	}
+
+	return instances, nil
 }
 
 func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
@@ -177,7 +182,7 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return instance.Instance, nil
+			return &instance, nil
 		}
 	}
 
