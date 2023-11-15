@@ -18,13 +18,18 @@ builds:
     goarch:
       - arm64
       - amd64
+    binary: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
 
 archives:
   - format: binary
+    builds_info:
+      mode: 0755
     name_template: >-
       {{ .ProjectName }}_
-      {{ .Version }}_
-      {{ .ShortCommit }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
