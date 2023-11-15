@@ -71,8 +71,9 @@ func InitEnv() (Environment, error) {
 	if e.ControllerURL, ok = os.LookupEnv(varControllerURL); !ok {
 		return e, fmt.Errorf("%w: %s", ErrMissingVar, varControllerURL)
 	}
+	e.ControllerURL = strings.TrimSuffix(e.ControllerURL, "/")
 	if !strings.HasPrefix(e.ControllerURL, "http") {
-		return e, fmt.Errorf("controller url %q missing http prefix", e.ControllerURL)
+		return e, fmt.Errorf("%w %q: missing http prefix", ErrInvalidVar, e.ControllerURL)
 	}
 
 	if e.GitlabJobId, ok = os.LookupEnv(varGitlabJobId); !ok {
@@ -92,21 +93,21 @@ func InitEnv() (Environment, error) {
 
 	if priority, ok, err := GetIntEnvVar(varPriority); ok {
 		if err != nil {
-			return e, fmt.Errorf("failed to parse priority: %w", err)
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varPriority, err)
 		}
 		e.Priority = priority
 	}
 
 	if debug, ok, err := GetBoolEnvVar(varDebug); ok {
 		if err != nil {
-			return e, fmt.Errorf("failed to read debug variable: %w", err)
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varDebug, err)
 		}
 		e.Debug = debug
 	}
 
 	if skip, ok, err := GetBoolEnvVar(varSkipTLSVerify); ok {
 		if err != nil {
-			return e, fmt.Errorf("failed to read skip TLS verification variable: %w", err)
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSkipTLSVerify, err)
 		}
 		e.SkipTLSVerify = skip
 	}
@@ -114,13 +115,13 @@ func InitEnv() (Environment, error) {
 	if customHttpHeaders, ok := os.LookupEnv(varCustomHTTPHeaders); ok {
 		err := json.Unmarshal([]byte(customHttpHeaders), &e.CustomHttpHeaders)
 		if err != nil {
-			return e, fmt.Errorf("failed to parse custom http headers %q: %w", customHttpHeaders, err)
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varCustomHTTPHeaders, err)
 		}
 	}
 
 	if keepAlive, ok, err := GetBoolEnvVar(varKeepAliveOnError); ok {
 		if err != nil {
-			return e, fmt.Errorf("failed to read keep alive on error variable: %w", err)
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varKeepAliveOnError, err)
 		}
 		e.KeepAliveOnError = keepAlive
 	}
