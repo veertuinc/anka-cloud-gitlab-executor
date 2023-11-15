@@ -7,6 +7,21 @@ import (
 	"testing"
 )
 
+func TestControllerWithTrailingSlash(t *testing.T) {
+	os.Setenv(varControllerURL, "http://fake-controller-url/")
+	os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+	defer os.Clearenv()
+
+	env, err := InitEnv()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if env.ControllerURL != "http://fake-controller-url" {
+		t.Errorf("expected controller url %q, got %q", "http://fake-controller-url", env.ControllerURL)
+	}
+}
+
 func TestCustomHttpHeadersEnvVar(t *testing.T) {
 	os.Setenv(varControllerURL, "http://fake-controller-url")
 	os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
