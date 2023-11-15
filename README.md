@@ -59,14 +59,14 @@ variables:
 build-job:
   stage: build
   tags:
-    - anka_runner
+    - anka_cloud_executor
   script:
     - echo "building"
 
 test-job:
   stage: test
   tags:
-    - anka_runner
+    - anka_cloud_executor
   script:
     - echo "running tests"
 ```
@@ -90,14 +90,14 @@ variables:
 build-job-1:
   stage: build
   tags:
-    - anka_runner
+    - anka_cloud_executor
   script:
     - echo "building part 1"
 
 build-job-2:
   stage: build
   tags:
-    - anka_runner
+    - anka_cloud_executor
   variables:
     ANKA_CLOUD_NODE_GROUP_ID: "ff7e840e-9510-42e3-44ae-7a65c00c5979"
   script:
@@ -107,7 +107,7 @@ build-job-2:
 unit-test-job:
   stage: test
   tags:
-    - anka_runner
+    - anka_cloud_executor
   variables:
     ANKA_CLOUD_TEMPLATE_TAG: "tester"
     ANKA_CLOUD_PRIORITY: "1"
@@ -117,7 +117,7 @@ unit-test-job:
 integration-test-job:
   stage: test
   tags:
-    - anka_runner
+    - anka_cloud_executor
   variables:
     ANKA_CLOUD_TEMPLATE_TAG: "tester"
     ANKA_CLOUD_PRIORITY: "10"
@@ -136,8 +136,3 @@ This project produces a single binary, that accepts the current Gitlab stage as 
 2. Prepare (Creates the Instance on the Anka Cloud, waiting for it to get scheduled)
 3. Run (Creates a remote shell on the VM, and pushes Gitlab provided script with stdin)
 4. Cleanup (Performs Termination request to the Anka Cloud Controller)
-
-### Creating local dev environment
-1. Run a gitlab runner locally
-2. Build the project: `go build cmd/anka-cloud-gitlab-executor/main.go`
-3. Update config.toml as instructed [here](#configuration)
