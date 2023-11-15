@@ -11,6 +11,7 @@ pipeline {
                         sh 'goreleaser build --clean --snapshot'
                     }
                 }
+                archiveArtifacts artifacts: "dist/"
             }
         }
     }
