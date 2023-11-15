@@ -26,6 +26,8 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 
 Check out the [full configuration spec](https://docs.gitlab.com/runner/executors/custom.html#configuration) for more info
 
+> ⚠️ Prepare stage is the one responsible for starting an Instance in the Controller, and waiting for it to get started. Default timeout is 1 hour, make sure you modify this according to the load and expected pull times of your Anka Cloud !
+
 ### Variables
 All variables are parsed as strings, since Gitlab is stating: "To ensure consistent behavior, you should always put variable values in single or double quotes." [Reference](https://docs.gitlab.com/ee/ci/variables/)
 
@@ -33,7 +35,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 
 | Variable name | Required | Type | Description |
 | ------------- |:--------:|:----:| ----------- |
-| ANKA_CLOUD_CONTROLLER_URL |     ✅ | String | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
+| ANKA_CLOUD_CONTROLLER_URL | ✅ | String | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
 | ANKA_CLOUD_TEMPLATE_ID | ✅ | String | VM Template ID to use. Must exist on the Registry and have SSH port forwarding |
 | ANKA_CLOUD_DEBUG |     ❌ | Boolean | Output Anka Cloud debug info |
 | ANKA_CLOUD_TEMPLATE_TAG | ❌ | String | Template tag to use |
