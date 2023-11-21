@@ -4,7 +4,8 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 
 ## Pre-requirements
 1. Install and Register a self-managed Gitlab Runner. See [here](https://docs.gitlab.com/runner/install/index.html) for more info.
-2. An active [Anka Build Cloud](https://veertu.com/anka-build/), with a template with ssh port forwarding configured.
+2. An active [Anka Build Cloud](https://veertu.com/anka-build/).
+3. An Anka VM Template in the Anka Build Cloud Registry with git installed, Remote Login enabled, and ssh port forwarding configured ([more info](https://docs.veertu.com/anka/plugins-and-integrations/controller-+-registry/gitlab-custom-executor/)).
 
 ## Configuration
 1. Download the binary to the same machine your Gitlab Runner is running on.
