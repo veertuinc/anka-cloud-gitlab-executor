@@ -3,8 +3,10 @@ package command
 import (
 	"context"
 	"fmt"
+	"math"
 	"net"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -16,6 +18,7 @@ import (
 const (
 	defaultSshUserName = "anka"
 	defaultSshPassword = "admin"
+	defaultSshRetries  = 6
 )
 
 var runCommand = &cobra.Command{
@@ -98,6 +101,11 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		sshPassword = defaultSshPassword
 	}
 
+	sshRetries := env.SSHRetries
+	if sshRetries == 0 {
+		sshRetries = defaultSshRetries
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -108,7 +116,17 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		},
 	}
 
-	sshConn, chans, reqs, err := ssh.NewClientConn(netConn, addr, sshConfig)
+	var sshConn ssh.Conn
+	var chans <-chan ssh.NewChannel
+	var reqs <-chan *ssh.Request
+	err = error(nil)
+	for tries := 0; tries < sshRetries; tries++ {
+		sshConn, chans, reqs, err = ssh.NewClientConn(netConn, addr, sshConfig)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(2, float64(tries))) * time.Second)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to create new ssh client connection to %q with config %+v: %w", addr, sshConfig, err)
 	}

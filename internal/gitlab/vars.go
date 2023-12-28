@@ -28,6 +28,7 @@ var (
 	varClientCertKeyPath = ankaVar("CLIENT_CERT_KEY_PATH")
 	varSshUserName       = ankaVar("SSH_USER_NAME")
 	varSshPassword       = ankaVar("SSH_PASSWORD")
+	varSshRetries        = ankaVar("SSH_RETRIES")
 	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
 	varKeepAliveOnError  = ankaVar("KEEP_ALIVE_ON_ERROR")
 
@@ -50,6 +51,7 @@ type Environment struct {
 	ClientCertKeyPath string
 	SSHUserName       string
 	SSHPassword       string
+	SSHRetries        int
 	GitlabJobId       string
 	CustomHttpHeaders map[string]string
 	KeepAliveOnError  bool
@@ -82,6 +84,12 @@ func InitEnv() (Environment, error) {
 
 	e.SSHUserName = os.Getenv(varSshUserName)
 	e.SSHPassword = os.Getenv(varSshPassword)
+	if sshRetries, ok, err := GetIntEnvVar(varSshRetries); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshRetries, err)
+		}
+		e.SSHRetries = sshRetries
+	}
 	e.TemplateId = os.Getenv(varTemplateId)
 	e.TemplateTag = os.Getenv(varTemplateTag)
 	e.NodeId = os.Getenv(varNodeId)
