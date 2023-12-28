@@ -42,8 +42,8 @@ func executeConfig(ctx context.Context, env gitlab.Environment) error {
 	log.Println("Running config stage")
 
 	output := output{
-		BuildsDir:       fmt.Sprintf("/tmp/build/%s", env.GitlabJobId),
-		CacheDir:        fmt.Sprintf("/tmp/cache/%s", env.GitlabJobId),
+		BuildsDir:       "/tmp/build",
+		CacheDir:        "/tmp/cache",
 		BuildsDirShared: false,
 		Driver: driver{
 			Name:    "Anka Cloud Gitlab Executor",
