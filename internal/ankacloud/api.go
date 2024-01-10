@@ -51,3 +51,8 @@ type getNodeResponse struct {
 	response
 	Nodes []Node `json:"body"`
 }
+
+type getTemplatesResponse struct {
+	response
+	Templates []Template `json:"body"`
+}

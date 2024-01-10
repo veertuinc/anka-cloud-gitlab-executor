@@ -17,6 +17,13 @@ type Node struct {
 	IP string `json:"ip_address"`
 }
 
+type Template struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Size int    `json:"size"`
+	Arch string `json:"arch"`
+}
+
 type InstanceState string
 
 const (
@@ -187,4 +194,25 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 	}
 
 	return nil, fmt.Errorf("instance with external id %s not found", externalId)
+}
+
+func (c *controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
+	body, err := c.APIClient.Get(ctx, "/api/v1/registry/vm", map[string]string{"apiVer": "v1"})
+	if err != nil {
+		return "", fmt.Errorf("failed to get templates: %w", err)
+	}
+
+	var response getTemplatesResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse response body %q: %w", string(body), err)
+	}
+
+	for _, t := range response.Templates {
+		if t.Name == templateName {
+			return t.Id, nil
+		}
+	}
+
+	return "", fmt.Errorf("template %s not found", templateName)
 }

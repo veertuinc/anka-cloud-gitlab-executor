@@ -36,7 +36,8 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | Variable name | Required | Type | Description |
 | ------------- |:--------:|:----:| ----------- |
 | ANKA_CLOUD_CONTROLLER_URL | ✅ | String | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
-| ANKA_CLOUD_TEMPLATE_ID | ✅ | String | VM Template ID to use. Must exist on the Registry and have SSH port forwarding |
+| ANKA_CLOUD_TEMPLATE_ID | ✅* | String | VM Template ID to use. Takes precedence over `ANKA_CLOUD_TEMPLATE_NAME`. **Required if `ANKA_CLOUD_TEMPLATE_NAME` not provided** |
+| ANKA_CLOUD_TEMPLATE_NAME | ✅* | String | VM Template Name to use. **Required if `ANKA_CLOUD_TEMPLATE_ID` not provided** |
 | ANKA_CLOUD_DEBUG |     ❌ | Boolean | Output Anka Cloud debug info |
 | ANKA_CLOUD_TEMPLATE_TAG | ❌ | String | Template tag to use |
 | ANKA_CLOUD_NODE_ID | ❌ | String | Run VM on this specific node |
@@ -93,6 +94,8 @@ build-job-1:
   stage: build
   tags:
     - anka_cloud_executor
+  variables:
+    ANKA_CLOUD_NODE_GROUP_ID: "ff7e840e-9510-42e3-44ae-7a65c00c5979"
   script:
     - echo "building part 1"
 
@@ -102,6 +105,7 @@ build-job-2:
     - anka_cloud_executor
   variables:
     ANKA_CLOUD_NODE_GROUP_ID: "ff7e840e-9510-42e3-44ae-7a65c00c5979"
+    ANKA_CLOUD_TEMPLATE_ID: "8c592f53-65a4-444e-9342-79d3ff07837c"
   script:
     - echo "building part 2"
 
@@ -113,6 +117,7 @@ unit-test-job:
   variables:
     ANKA_CLOUD_TEMPLATE_TAG: "tester"
     ANKA_CLOUD_PRIORITY: "1"
+    ANKA_CLOUD_TEMPLATE_NAME: "sonoma-xcode15"
   script:
     - echo "running unit tests"
 
@@ -123,6 +128,7 @@ integration-test-job:
   variables:
     ANKA_CLOUD_TEMPLATE_TAG: "tester"
     ANKA_CLOUD_PRIORITY: "10"
+    ANKA_CLOUD_TEMPLATE_ID: "8c592f53-65a4-444e-9342-79d3ff07837c"
   script:
     - echo "running integration tests"
 ```
