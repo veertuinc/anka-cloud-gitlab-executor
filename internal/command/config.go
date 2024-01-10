@@ -39,7 +39,7 @@ type driver struct {
 
 func executeConfig(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
-	log.Println("Running config stage")
+	log.Println("running config stage")
 
 	output := output{
 		BuildsDir:       fmt.Sprintf("/tmp/build/%s", env.GitlabJobId),

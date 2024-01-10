@@ -25,11 +25,7 @@ var prepareCommand = &cobra.Command{
 
 func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
-	log.Println("Running prepare stage")
-
-	if env.TemplateId == "" {
-		return fmt.Errorf("failed to get template id from environment: %w", gitlab.ErrMissingVar)
-	}
+	log.Println("running prepare stage")
 
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
@@ -38,8 +34,21 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	}
 	controller := ankacloud.NewController(apiClient)
 
+	templateId := env.TemplateId
+	if templateId == "" {
+		if env.TemplateName == "" {
+			return fmt.Errorf("%w: either template id or temaplte name must be specified", gitlab.ErrMissingVar)
+		}
+		log.Println("please consider using template id instead of template name, since template names are not guaranteed to be unique")
+		templateId, err = controller.GetTemplateIdByName(ctx, env.TemplateName)
+		if err != nil {
+			return fmt.Errorf("failed to get template id of template named %q: %w", env.TemplateName, err)
+		}
+		log.Printf("template with id %q and name %q will be used\n", templateId, env.TemplateName)
+	}
+
 	req := ankacloud.CreateInstanceRequest{
-		TemplateId:  env.TemplateId,
+		TemplateId:  templateId,
 		ExternalId:  env.GitlabJobId,
 		Tag:         env.TemplateTag,
 		NodeId:      env.NodeId,

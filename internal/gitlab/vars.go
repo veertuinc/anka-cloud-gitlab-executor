@@ -30,6 +30,7 @@ var (
 	varSshPassword       = ankaVar("SSH_PASSWORD")
 	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
 	varKeepAliveOnError  = ankaVar("KEEP_ALIVE_ON_ERROR")
+	varTemplateName      = ankaVar("TEMPLATE_NAME")
 
 	// Gitlab vars
 	varGitlabJobId     = gitlabVar("CI_JOB_ID")
@@ -54,6 +55,7 @@ type Environment struct {
 	CustomHttpHeaders map[string]string
 	KeepAliveOnError  bool
 	GitlabJobStatus   jobStatus
+	TemplateName      string
 }
 
 type jobStatus string
@@ -83,6 +85,7 @@ func InitEnv() (Environment, error) {
 	e.SSHUserName = os.Getenv(varSshUserName)
 	e.SSHPassword = os.Getenv(varSshPassword)
 	e.TemplateId = os.Getenv(varTemplateId)
+	e.TemplateName = os.Getenv(varTemplateName)
 	e.TemplateTag = os.Getenv(varTemplateTag)
 	e.NodeId = os.Getenv(varNodeId)
 	e.NodeGroupId = os.Getenv(varNodeGroupId)
