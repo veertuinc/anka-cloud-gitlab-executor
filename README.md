@@ -95,7 +95,7 @@ build-job-1:
   tags:
     - anka_cloud_executor
   variables:
-    ANKA_CLOUD_NODE_GROUP_ID: "ff7e840e-9510-42e3-44ae-7a65c00c5979"
+    ANKA_CLOUD_TEMPLATE_ID: "8c592f53-65a4-444e-9342-79d3ff07837c"
   script:
     - echo "building part 1"
 
