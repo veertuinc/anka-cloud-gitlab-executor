@@ -37,14 +37,14 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	templateId := env.TemplateId
 	if templateId == "" {
 		if env.TemplateName == "" {
-			return fmt.Errorf("no template ID or Name supplied: %w", gitlab.ErrMissingVar)
+			return fmt.Errorf("%w: either template id or temaplte name must be specified", gitlab.ErrMissingVar)
 		}
-		log.Println("Please consider using template ID instead of template name, since template names are not guaranteed to be unique")
+		log.Println("Please consider using template id instead of template name, since template names are not guaranteed to be unique")
 		templateId, err = controller.GetTemplateIdByName(ctx, env.TemplateName)
 		if err != nil {
 			return fmt.Errorf("failed to get template id of template named %q: %w", env.TemplateName, err)
 		}
-		log.Printf("template id for template name %q: %s\n", env.TemplateName, templateId)
+		log.Printf("template with id %q and name %q will be used\n", templateId, env.TemplateName)
 	}
 
 	req := ankacloud.CreateInstanceRequest{

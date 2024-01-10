@@ -20,7 +20,7 @@ type Node struct {
 type Template struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
-	Size int    `json:"size"`
+	Size int64  `json:"size"`
 	Arch string `json:"arch"`
 }
 
@@ -214,5 +214,5 @@ func (c *controller) GetTemplateIdByName(ctx context.Context, templateName strin
 		}
 	}
 
-	return "", fmt.Errorf("template %s not found", templateName)
+	return "", fmt.Errorf("template %q not found", templateName)
 }
