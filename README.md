@@ -37,7 +37,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ------------- |:--------:|:----:| ----------- |
 | ANKA_CLOUD_CONTROLLER_URL | ✅ | String | Anka Build Cloud's Controller URL. Inlcuding `http[s]` prefix. Port optional |
 | ANKA_CLOUD_TEMPLATE_ID | ✅* | String | VM Template ID to use. Takes precedence over `ANKA_CLOUD_TEMPLATE_NAME`. **Required if `ANKA_CLOUD_TEMPLATE_NAME` not provided** |
-| ANKA_CLOUD_TEMPLATE_NAME | ✅* | String | VM Template Name to use. **Required if `ANKA_CLOUD_TEMPLATE_ID` not provided** |
+| ANKA_CLOUD_TEMPLATE_NAME | ✅* | String | VM Template Name to use. Since template names are not guaranteed to be unique, it is recommended to use `ANKA_CLOUD_TEMPLATE_ID`. **Required if `ANKA_CLOUD_TEMPLATE_ID` not provided** |
 | ANKA_CLOUD_DEBUG |     ❌ | Boolean | Output Anka Cloud debug info |
 | ANKA_CLOUD_TEMPLATE_TAG | ❌ | String | Template tag to use |
 | ANKA_CLOUD_NODE_ID | ❌ | String | Run VM on this specific node |
