@@ -26,10 +26,10 @@ var cleanupCommand = &cobra.Command{
 func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stdout)
 
-	log.Println("Running cleanup stage")
+	log.Println("running cleanup stage")
 
 	if env.KeepAliveOnError && env.GitlabJobStatus == gitlab.JobStatusFailed {
-		log.Println("Keeping VM alive on error")
+		log.Println("keeping VM alive on error")
 		return nil
 	}
 

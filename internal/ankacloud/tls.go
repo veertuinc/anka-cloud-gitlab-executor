@@ -9,7 +9,7 @@ import (
 )
 
 func configureTLS(config APIClientConfig) (*tls.Config, error) {
-	log.Println("Handling TLS configuration")
+	log.Println("handling TLS configuration")
 
 	tlsConfig := &tls.Config{}
 	caCertPool, _ := x509.SystemCertPool()
@@ -22,11 +22,11 @@ func configureTLS(config APIClientConfig) (*tls.Config, error) {
 		if err := appendRootCert(config.CaCertPath, caCertPool); err != nil {
 			return nil, fmt.Errorf("failed to add CA cert from %q to pool: %w", config.CaCertPath, err)
 		}
-		log.Printf("Added CA cert at %q\n", config.CaCertPath)
+		log.Printf("added CA cert at %q\n", config.CaCertPath)
 	}
 
 	if config.SkipTLSVerify {
-		log.Println("Allowing to skip server host verification")
+		log.Println("allowing to skip server host verification")
 		tlsConfig.InsecureSkipVerify = true
 	}
 

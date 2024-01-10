@@ -33,7 +33,7 @@ var runCommand = &cobra.Command{
 func executeRun(ctx context.Context, env gitlab.Environment, args []string) error {
 	log.SetOutput(os.Stderr)
 
-	log.Printf("Running run stage %s\n", args[1])
+	log.Printf("running run stage %s\n", args[1])
 
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
