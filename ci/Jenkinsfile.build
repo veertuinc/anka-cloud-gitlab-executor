@@ -4,7 +4,7 @@ pipeline {
         }
     }
     stages {
-        stage('Release') {
+        stage('Build') {
             steps {
                 script {
                     docker.image('goreleaser/goreleaser:latest').inside('--entrypoint "" --env GOCACHE=/tmp/.gocache') {
@@ -15,4 +15,5 @@ pipeline {
             }
         }
     }
+    post { always { deleteDir() }}
 }
