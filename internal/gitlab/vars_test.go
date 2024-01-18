@@ -78,3 +78,79 @@ func TestGitlabJobIdMissing(t *testing.T) {
 		t.Errorf("expected error to contain %q, got %q", varGitlabJobId, err)
 	}
 }
+
+func TestInvalidVram(t *testing.T) {
+	defer os.Clearenv()
+
+	testCases := []struct {
+		name string
+		vram string
+	}{
+		{
+			name: "negative vram",
+			vram: "-1",
+		},
+		{
+			name: "zero vram",
+			vram: "0",
+		},
+		{
+			name: "non-numeric vram",
+			vram: "fake-vram",
+		},
+	}
+
+	for _, tc := range testCases {
+		os.Clearenv()
+		os.Setenv(varControllerURL, "http://fake-controller-url")
+		os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+
+		os.Setenv(varVmVcpu, tc.vram)
+
+		_, err := InitEnv()
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+		if !errors.Is(err, ErrInvalidVar) {
+			t.Errorf("expected error %q, got %q", ErrInvalidVar, err)
+		}
+	}
+}
+
+func TestInvalidVcpu(t *testing.T) {
+	defer os.Clearenv()
+
+	testCases := []struct {
+		name string
+		vcpu string
+	}{
+		{
+			name: "negative vcpu",
+			vcpu: "-1",
+		},
+		{
+			name: "zero vcpu",
+			vcpu: "0",
+		},
+		{
+			name: "non-numeric vcpu",
+			vcpu: "fake-vram",
+		},
+	}
+
+	for _, tc := range testCases {
+		os.Clearenv()
+		os.Setenv(varControllerURL, "http://fake-controller-url")
+		os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+
+		os.Setenv(varVmVcpu, tc.vcpu)
+
+		_, err := InitEnv()
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+		if !errors.Is(err, ErrInvalidVar) {
+			t.Errorf("expected error %q, got %q", ErrInvalidVar, err)
+		}
+	}
+}

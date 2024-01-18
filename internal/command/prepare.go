@@ -59,6 +59,8 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		StartupScriptMonitoring: true,
 		StartupScriptTimeout:    5 * 60,
 		StartupScript:           base64.StdEncoding.EncodeToString([]byte("sleep 5")), // even though we wait for network, it is recommended to wait a bit more
+		Vcpu:        env.VmVcpu,
+		VramMb:      env.VmVramMb,
 	}
 
 	log.Printf("creating instance with config: %+v\n", req)

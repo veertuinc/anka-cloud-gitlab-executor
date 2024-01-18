@@ -33,6 +33,8 @@ var (
 	varTemplateName      = ankaVar("TEMPLATE_NAME")
 	varBuildsDir         = ankaVar("BUILDS_DIR")
 	varCacheDir          = ankaVar("CACHE_DIR")
+	varVmVramMb          = ankaVar("VM_VRAM_MB")
+	varVmVcpu            = ankaVar("VM_VCPU")
 
 	// Gitlab vars
 	varGitlabJobId     = gitlabVar("CI_JOB_ID")
@@ -60,6 +62,8 @@ type Environment struct {
 	TemplateName      string
 	BuildsDir         string
 	CacheDir          string
+	VmVramMb          int
+	VmVcpu            int
 }
 
 type jobStatus string
@@ -133,6 +137,26 @@ func InitEnv() (Environment, error) {
 			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varKeepAliveOnError, err)
 		}
 		e.KeepAliveOnError = keepAlive
+	}
+
+	if vram, ok, err := GetIntEnvVar(varVmVramMb); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varVmVramMb, err)
+		}
+		if ok && vram < 1 {
+			return e, fmt.Errorf("%w vram must be 1 or higher", ErrInvalidVar)
+		}
+		e.VmVramMb = vram
+	}
+
+	if vcpu, ok, err := GetIntEnvVar(varVmVcpu); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varVmVcpu, err)
+		}
+		if ok && vcpu < 1 {
+			return e, fmt.Errorf("%w vcpu must be 1 or higher", ErrInvalidVar)
+		}
+		e.VmVcpu = vcpu
 	}
 
 	return e, nil

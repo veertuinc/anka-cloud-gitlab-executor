@@ -52,6 +52,8 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADERS | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
 | ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable. **There will be no indication for this behavior on the Job's output unless Gitlab Debug is enabled** |
+| ANKA_CLOUD_VM_VCPU | ❌ | Number | Set number of CPU num for the VM. Only works on `stopped` templates. Minimum value of 1 |
+| ANKA_CLOUD_VM_VRAM_MB | ❌ | Number | Set RAM in MiB for the VM. Only works on `stopped` templates. Minimum value of 1 |
 | ANKA_CLOUD_BUILDS_DIR | ❌ | String | Absolute path to a directory where builds are stored in the VM. If not supplied, "/tmp/builds" is used. |
 | ANKA_CLOUD_CACHE_DIR | ❌ | String | Absolute path to a directory where build caches are stored in the VM. If not supplied, "/tmp/cache" is used. |
 
@@ -134,6 +136,8 @@ integration-test-job:
     ANKA_CLOUD_TEMPLATE_TAG: "tester"
     ANKA_CLOUD_PRIORITY: "10"
     ANKA_CLOUD_TEMPLATE_ID: "8c592f53-65a4-444e-9342-79d3ff07837c"
+    ANKA_CLOUD_VM_VCPU: "1"
+    ANKA_CLOUD_VM_VRAM_MB: "4096"
   script:
     - echo "running integration tests"
 ```
