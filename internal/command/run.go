@@ -3,8 +3,8 @@ package command
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -80,14 +80,6 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 	defer gitlabScriptFile.Close()
 	log.Printf("gitlab script path: %s", args[0])
 
-	addr := fmt.Sprintf("%s:%s", nodeIp, nodeSshPort)
-	dialer := net.Dialer{}
-	netConn, err := dialer.Dial("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("failed to create tcp dialer: %w", err)
-	}
-	log.Printf("connected to %s\n", addr)
-
 	sshUserName := env.SSHUserName
 	if sshUserName == "" {
 		sshUserName = defaultSshUserName
@@ -98,25 +90,32 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		sshPassword = defaultSshPassword
 	}
 
-	sshConfig := &ssh.ClientConfig{
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
-		User: sshUserName,
+	sshClientConfig := &ssh.ClientConfig{
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		User:            sshUserName,
 		Auth: []ssh.AuthMethod{
 			ssh.Password(sshPassword),
 		},
+		Timeout: 10 * time.Second,
 	}
 
-	sshConn, chans, reqs, err := ssh.NewClientConn(netConn, addr, sshConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create new ssh client connection to %q with config %+v: %w", addr, sshConfig, err)
+	addr := fmt.Sprintf("%s:%s", nodeIp, nodeSshPort)
+	var sshClient *ssh.Client
+
+	// retry logic mimics what is done by the official Gitlab Runner (true for gitlab runner v16.7.0)
+	for i := 0; i < 3; i++ {
+		sshClient, err = ssh.Dial("tcp", addr, sshClientConfig)
+		if err == nil {
+			break
+		}
+		time.Sleep(3 * time.Second)
 	}
-	defer sshConn.Close()
+	if err != nil {
+		return fmt.Errorf("failed to create new ssh client connection to %q: %w", addr, err)
+	}
+	defer sshClient.Close()
 
 	log.Println("ssh connection established")
-	sshClient := ssh.NewClient(sshConn, chans, reqs)
-	defer sshClient.Close()
 
 	session, err := sshClient.NewSession()
 	if err != nil {
