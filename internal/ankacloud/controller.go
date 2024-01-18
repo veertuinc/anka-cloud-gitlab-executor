@@ -51,6 +51,7 @@ type Instance struct {
 	ExternalId string        `json:"external_id"`
 	VM         *VM           `json:"vminfo,omitempty"`
 	NodeId     string        `json:"node_id,omitempty"`
+	Progress   float32       `json:"progress,omitempty"`
 }
 
 type InstanceWrapper struct {
@@ -134,8 +135,12 @@ func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceI
 
 			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
 			switch instance.State {
-			case StateScheduling, StatePulling:
+			case StateScheduling:
 				break
+			case StatePulling:
+				if instance.Progress != 0 {
+					log.Printf("pulling progress: %.0f%%\n", instance.Progress*100)
+				}
 			case StateStarted:
 				return nil
 			default:
