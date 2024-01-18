@@ -38,7 +38,6 @@ const (
 
 type VM struct {
 	PortForwardingRules []PortForwardingRule `json:"port_forwarding,omitempty"`
-	Progress            float32              `json:"progress,omitempty"`
 }
 type PortForwardingRule struct {
 	VmPort   int    `json:"guest_port"`
@@ -52,6 +51,7 @@ type Instance struct {
 	ExternalId string        `json:"external_id"`
 	VM         *VM           `json:"vminfo,omitempty"`
 	NodeId     string        `json:"node_id,omitempty"`
+	Progress   float32       `json:"progress,omitempty"`
 }
 
 type InstanceWrapper struct {
@@ -138,8 +138,8 @@ func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceI
 			case StateScheduling:
 				break
 			case StatePulling:
-				if instance.VM != nil && instance.VM.Progress != 0 {
-					log.Printf("pulling progress: %.0f%%\n", instance.VM.Progress*100)
+				if instance.Progress != 0 {
+					log.Printf("pulling progress: %.0f%%\n", instance.Progress*100)
 				}
 			case StateStarted:
 				return nil
