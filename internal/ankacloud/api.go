@@ -10,13 +10,24 @@ type response struct {
 	Body    interface{} `json:"body,omitempty"`
 }
 
+type StartupScriptCondition int
+
+const (
+	WaitForNetwork StartupScriptCondition = 0
+	NoWait         StartupScriptCondition = 1
+)
+
 type CreateInstanceRequest struct {
-	TemplateId  string `json:"vmid"`
-	ExternalId  string `json:"external_id,omitempty"`
-	Tag         string `json:"tag,omitempty"`
-	NodeId      string `json:"node_id,omitempty"`
-	Priority    int    `json:"priority,omitempty"`
-	NodeGroupId string `json:"group_id,omitempty"`
+	TemplateId              string                 `json:"vmid"`
+	ExternalId              string                 `json:"external_id,omitempty"`
+	Tag                     string                 `json:"tag,omitempty"`
+	NodeId                  string                 `json:"node_id,omitempty"`
+	Priority                int                    `json:"priority,omitempty"`
+	NodeGroupId             string                 `json:"group_id,omitempty"`
+	StartupScript           string                 `json:"startup_script,omitempty"`
+	StartupScriptMonitoring bool                   `json:"script_monitoring,omitempty"`
+	StartupScriptTimeout    int                    `json:"script_timeout,omitempty"`
+	StartupScriptCondition  StartupScriptCondition `json:"startup_script_condition"`
 }
 
 type createInstanceResponse struct {
