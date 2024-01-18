@@ -103,6 +103,7 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	// retry logic mimics what is done by the official Gitlab Runner (true for gitlab runner v16.7.0)
 	for i := 0; i < 3; i++ {
+		log.Printf("attempt #%d to establish ssh connection to %q\n", i, addr)
 		sshClient, err = ssh.Dial("tcp", addr, sshClientConfig)
 		if err == nil {
 			break
