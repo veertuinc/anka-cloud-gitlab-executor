@@ -96,7 +96,6 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		Auth: []ssh.AuthMethod{
 			ssh.Password(sshPassword),
 		},
-		Timeout: 10 * time.Second,
 	}
 
 	addr := fmt.Sprintf("%s:%s", nodeIp, nodeSshPort)
