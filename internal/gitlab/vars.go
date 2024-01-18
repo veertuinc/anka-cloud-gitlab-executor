@@ -31,6 +31,8 @@ var (
 	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
 	varKeepAliveOnError  = ankaVar("KEEP_ALIVE_ON_ERROR")
 	varTemplateName      = ankaVar("TEMPLATE_NAME")
+	varBuildsDir         = ankaVar("BUILDS_DIR")
+	varCacheDir          = ankaVar("CACHE_DIR")
 
 	// Gitlab vars
 	varGitlabJobId     = gitlabVar("CI_JOB_ID")
@@ -56,6 +58,8 @@ type Environment struct {
 	KeepAliveOnError  bool
 	GitlabJobStatus   jobStatus
 	TemplateName      string
+	BuildsDir         string
+	CacheDir          string
 }
 
 type jobStatus string
@@ -93,6 +97,8 @@ func InitEnv() (Environment, error) {
 	e.ClientCertPath = os.Getenv(varClientCertPath)
 	e.ClientCertKeyPath = os.Getenv(varClientCertKeyPath)
 	e.GitlabJobStatus = jobStatus(os.Getenv(varGitlabJobStatus))
+	e.BuildsDir = os.Getenv(varBuildsDir)
+	e.CacheDir = os.Getenv(varCacheDir)
 
 	if priority, ok, err := GetIntEnvVar(varPriority); ok {
 		if err != nil {
