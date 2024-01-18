@@ -49,18 +49,17 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	}
 
 	req := ankacloud.CreateInstanceRequest{
-		TemplateId:  templateId,
-		ExternalId:  env.GitlabJobId,
-		Tag:         env.TemplateTag,
-		NodeId:      env.NodeId,
-		Priority:    env.Priority,
-		NodeGroupId: env.NodeGroupId,
+		TemplateId:              templateId,
+		ExternalId:              env.GitlabJobId,
+		Tag:                     env.TemplateTag,
+		NodeId:                  env.NodeId,
+		Priority:                env.Priority,
+		NodeGroupId:             env.NodeGroupId,
+		StartupScriptCondition:  ankacloud.WaitForNetwork,
+		StartupScriptMonitoring: true,
+		StartupScriptTimeout:    5 * 60,
+		StartupScript:           base64.StdEncoding.EncodeToString([]byte("sleep 5")), // even though we wait for network, it is recommended to wait a bit more
 	}
-
-	// make sure VM network is up
-	req.StartupScriptMonitoring = true
-	req.StartupScriptTimeout = 5 * 60
-	req.StartupScript = base64.StdEncoding.EncodeToString([]byte("sleep 5"))
 
 	log.Printf("creating instance with config: %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
