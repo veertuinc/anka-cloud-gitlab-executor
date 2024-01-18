@@ -28,6 +28,8 @@ type CreateInstanceRequest struct {
 	StartupScriptMonitoring bool                   `json:"script_monitoring,omitempty"`
 	StartupScriptTimeout    int                    `json:"script_timeout,omitempty"`
 	StartupScriptCondition  StartupScriptCondition `json:"startup_script_condition"`
+	Vcpu                    int                    `json:"vcpu,omitempty"`
+	VramMb                  int                    `json:"vram,omitempty"`
 }
 
 type createInstanceResponse struct {
