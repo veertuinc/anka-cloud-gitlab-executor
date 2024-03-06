@@ -50,7 +50,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka" |
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
-| ANKA_SSH_CONNECTION_ATTEMPTS | ❌ | Number | The attempts to make when sshing to the VM. Useful when VMs take a long time to start under stressful situations or slow disks (like EBS). |
+| ANKA_SSH_CONNECTION_ATTEMPTS | ❌ | Number | The attempts to make when sshing to the VM. Useful when VMs take a long time to start under stressful situations or slow disks (like EBS). Defaults to `4` -- Minimum value of 1 |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADERS | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
 | ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable. **There will be no indication for this behavior on the Job's output unless Gitlab Debug is enabled** |
 | ANKA_CLOUD_VM_VCPU | ❌ | Number | Set number of CPU num for the VM. Only works on `stopped` templates. Minimum value of 1 |
