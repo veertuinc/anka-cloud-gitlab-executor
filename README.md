@@ -48,14 +48,14 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_CA_CERT_PATH | ❌ | String | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Certificate. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
-| ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
-| ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADERS | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
 | ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable. **There will be no indication for this behavior on the Job's output unless Gitlab Debug is enabled** |
 | ANKA_CLOUD_VM_VCPU | ❌ | Number | Set number of CPU num for the VM. Only works on `stopped` templates. Minimum value of 1 |
 | ANKA_CLOUD_VM_VRAM_MB | ❌ | Number | Set RAM in MiB for the VM. Only works on `stopped` templates. Minimum value of 1 |
 | ANKA_CLOUD_BUILDS_DIR | ❌ | String | Absolute path to a directory where builds are stored in the VM. If not supplied, "/tmp/builds" is used. |
 | ANKA_CLOUD_CACHE_DIR | ❌ | String | Absolute path to a directory where build caches are stored in the VM. If not supplied, "/tmp/cache" is used. |
+| ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
+| ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 
 To prevent SSH credentials from being exposed to the job. They can be specified via command line arguments with the following modification to custom executor config:
 
