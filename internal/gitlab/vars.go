@@ -3,6 +3,7 @@ package gitlab
 import (
 	"encoding/json"
 	"fmt"
+
 	"os"
 	"strconv"
 	"strings"
@@ -104,8 +105,13 @@ func InitEnv() (Environment, error) {
 		return e, fmt.Errorf("%w: %s", ErrMissingVar, varGitlabJobId)
 	}
 
-	e.SSHUserName = os.Getenv(varSshUserName)
-	e.SSHPassword = os.Getenv(varSshPassword)
+	if os.Getenv(varSshUserName) != "" {
+		e.SSHUserName = os.Getenv(varSshUserName)
+	}
+	if os.Getenv(varSshPassword) != "" {
+		e.SSHPassword = os.Getenv(varSshPassword)
+	}
+
 	if sshAttempts, ok, err := GetIntEnvVar(varSshAttempts); ok {
 		if err != nil {
 			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshAttempts, err)
