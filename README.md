@@ -11,7 +11,13 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 1. Download the binary to the same machine your Gitlab Runner is running on.
 2. Add the following `[runners.custom]` block to Gitlab Runner configuration:
     > By default, runner config is at `~/.gitlab-runner/config.toml`
+
+    > Any environment variables can be specified in the `environment` block and apply to all jobs. However, they are also available in the job's environment, so avoid placing SSH credentials and other sensitive variables in the `environment` block.
     ```
+    environment = [
+      "ANKA_CLOUD_CONTROLLER_URL=https://anka.contoller:8090",
+      "ANKA_CLOUD_TEMPLATE_ID=8c592f53-65a4-444e-9342-79d3ff07837c",
+    ]
     [runners.custom]
         config_exec = "/path/to/anka-cloud-gitlab-executor"
         config_args = ["config"]
@@ -57,7 +63,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 
-To prevent SSH credentials from being exposed to the job and it's yaml, they can be specified via command line arguments *or* `environment` in the config.toml:
+To prevent SSH credentials from being exposed to the job log, they can instead be specified via command line arguments in the config.toml > runner.custom:
 
   > Note: values specified via job environment variables will override those provided via command line arguments.
   ```
@@ -71,26 +77,9 @@ To prevent SSH credentials from being exposed to the job and it's yaml, they can
         cleanup_exec = "/path/to/anka-cloud-gitlab-executor"
         cleanup_args = ["cleanup"]
   ```
-  OR
-  ```
-  environment = [
-    "ANKA_CLOUD_CONTROLLER_URL=https://anka.contoller:8090",
-    "ANKA_CLOUD_TEMPLATE_ID=8c592f53-65a4-444e-9342-79d3ff07837c",
-    "ANKA_CLOUD_SSH_USER_NAME=anka",
-    "ANKA_CLOUD_SSH_PASSWORD=admin"
-  ]
-  [runners.custom]
-    config_exec = "/mnt/${GITLAB_RUNNER_CUSTOM_EXECUTOR_FILE_NAME}"
-    config_args = ["config"]
-    prepare_exec = "/mnt/${GITLAB_RUNNER_CUSTOM_EXECUTOR_FILE_NAME}"
-    prepare_args = ["prepare"]
-    run_exec = "/mnt/${GITLAB_RUNNER_CUSTOM_EXECUTOR_FILE_NAME}"
-    run_args = ["run"]
-    cleanup_exec = "/mnt/${GITLAB_RUNNER_CUSTOM_EXECUTOR_FILE_NAME}"
-    cleanup_args = ["cleanup"]
-  ```
 
 ### Examples
+
 Example basic pipeline:
 ```
 variables:
