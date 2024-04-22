@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -77,8 +79,18 @@ var (
 	JobStatusRunning  jobStatus = "running"
 )
 
+var sshPassword = flag.String("ssh-password", "", "the password used to SSH into the VM")
+var sshUserName = flag.String("ssh-username", "", "the username used to SSH into the VM")
+
 func InitEnv() (Environment, error) {
-	e := Environment{}
+	// parse command line flags defined above
+	flag.Parse()
+	e := Environment{
+		// load initial values from command line flags
+		SSHPassword: *sshPassword,
+		SSHUserName: *sshUserName,
+	}
+
 	var ok bool
 	if e.ControllerURL, ok = os.LookupEnv(varControllerURL); !ok {
 		return e, fmt.Errorf("%w: %s", ErrMissingVar, varControllerURL)
