@@ -176,3 +176,4 @@ This project produces a single binary, that accepts the current Gitlab stage as 
 2. Prepare (Creates the Instance on the Anka Cloud, waiting for it to get scheduled)
 3. Run (Creates a remote shell on the VM, and pushes Gitlab provided script with stdin)
 4. Cleanup (Performs Termination request to the Anka Cloud Controller)
+
