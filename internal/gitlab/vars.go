@@ -3,10 +3,11 @@ package gitlab
 import (
 	"encoding/json"
 	"fmt"
-	flag "github.com/spf13/pflag"
 	"os"
 	"strconv"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 const (
