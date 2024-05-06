@@ -90,9 +90,6 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		sshPassword = defaultSshPassword
 	}
 
-	log.Printf("ssh username: %s\n", sshUserName)
-	log.Printf("ssh password: %s\n", sshPassword)
-
 	sshClientConfig := &ssh.ClientConfig{
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		User:            sshUserName,

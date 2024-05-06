@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	flag "github.com/spf13/pflag"
-	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
 const (
@@ -92,9 +91,6 @@ func InitEnv() (Environment, error) {
 		SSHPassword: *sshPassword,
 		SSHUserName: *sshUserName,
 	}
-
-	log.Printf("vars ssh username: %s\n", e.SSHUserName)
-	log.Printf("vars ssh password: %s\n", e.SSHPassword)
 
 	var ok bool
 	if e.ControllerURL, ok = os.LookupEnv(varControllerURL); !ok {
