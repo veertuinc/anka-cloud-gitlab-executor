@@ -106,13 +106,17 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 	if maxAttempts < 1 {
 		maxAttempts = 4
 	}
+	sshConnectionAttemptDelay := env.SSHConnectionAttemptDelay
+	if sshConnectionAttemptDelay < 1 {
+		sshConnectionAttemptDelay = 5
+	}
 	for i := 0; i < maxAttempts; i++ {
 		log.Printf("attempt #%d to establish ssh connection to %q\n", i+1, addr)
 		sshClient, err = ssh.Dial("tcp", addr, sshClientConfig)
 		if err == nil {
 			break
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(sshConnectionAttemptDelay) * time.Second)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to create new ssh client connection to %q: %w", addr, err)

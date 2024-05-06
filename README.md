@@ -61,6 +61,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_BUILDS_DIR | ❌ | String | Absolute path to a directory where builds are stored in the VM. If not supplied, "/tmp/builds" is used. |
 | ANKA_CLOUD_CACHE_DIR | ❌ | String | Absolute path to a directory where build caches are stored in the VM. If not supplied, "/tmp/cache" is used. |
 | ANKA_SSH_CONNECTION_ATTEMPTS | ❌ | Number | The attempts to make when sshing to the VM. Useful when VMs take a long time to start under stressful situations or slow disks (like EBS). Defaults to `4` -- Minimum value of 1 |
+| ANKA_SSH_CONNECTION_ATTEMPT_DELAY | ❌ | Number | The delay between ssh connection attempts in seconds. Defaults to `5` |
 | ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 
