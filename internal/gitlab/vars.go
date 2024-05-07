@@ -114,19 +114,6 @@ func InitEnv() (Environment, error) {
 		e.SSHPassword = os.Getenv(varSshPassword)
 	}
 
-	if sshAttempts, ok, err := GetIntEnvVar(varSshAttempts); ok {
-		if err != nil {
-			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshAttempts, err)
-		}
-		e.SSHAttempts = sshAttempts
-	}
-	if sshConnectionAttemptDelay, ok, err := GetIntEnvVar(varSshConnectionAttemptDelay); ok {
-		if err != nil {
-			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshConnectionAttemptDelay, err)
-		}
-		e.SSHConnectionAttemptDelay = sshConnectionAttemptDelay
-	}
-
 	e.TemplateId = os.Getenv(varTemplateId)
 	e.TemplateName = os.Getenv(varTemplateName)
 	e.TemplateTag = os.Getenv(varTemplateTag)
@@ -192,6 +179,20 @@ func InitEnv() (Environment, error) {
 			return e, fmt.Errorf("%w vcpu must be 1 or higher", ErrInvalidVar)
 		}
 		e.VmVcpu = vcpu
+	}
+
+	if sshAttempts, ok, err := GetIntEnvVar(varSshAttempts); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshAttempts, err)
+		}
+		e.SSHAttempts = sshAttempts
+	}
+
+	if sshConnectionAttemptDelay, ok, err := GetIntEnvVar(varSshConnectionAttemptDelay); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshConnectionAttemptDelay, err)
+		}
+		e.SSHConnectionAttemptDelay = sshConnectionAttemptDelay
 	}
 
 	return e, nil
