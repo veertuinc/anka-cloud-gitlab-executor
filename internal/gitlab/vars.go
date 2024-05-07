@@ -3,9 +3,12 @@ package gitlab
 import (
 	"encoding/json"
 	"fmt"
+
 	"os"
 	"strconv"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -15,26 +18,28 @@ const (
 
 var (
 	// Custom Executor vars
-	varDebug             = ankaVar("DEBUG")
-	varControllerURL     = ankaVar("CONTROLLER_URL")
-	varTemplateId        = ankaVar("TEMPLATE_ID")
-	varTemplateTag       = ankaVar("TEMPLATE_TAG")
-	varNodeId            = ankaVar("NODE_ID")
-	varPriority          = ankaVar("PRIORITY")
-	varNodeGroupId       = ankaVar("NODE_GROUP_ID")
-	varCaCertPath        = ankaVar("CA_CERT_PATH")
-	varSkipTLSVerify     = ankaVar("SKIP_TLS_VERIFY")
-	varClientCertPath    = ankaVar("CLIENT_CERT_PATH")
-	varClientCertKeyPath = ankaVar("CLIENT_CERT_KEY_PATH")
-	varSshUserName       = ankaVar("SSH_USER_NAME")
-	varSshPassword       = ankaVar("SSH_PASSWORD")
-	varCustomHTTPHeaders = ankaVar("CUSTOM_HTTP_HEADERS")
-	varKeepAliveOnError  = ankaVar("KEEP_ALIVE_ON_ERROR")
-	varTemplateName      = ankaVar("TEMPLATE_NAME")
-	varBuildsDir         = ankaVar("BUILDS_DIR")
-	varCacheDir          = ankaVar("CACHE_DIR")
-	varVmVramMb          = ankaVar("VM_VRAM_MB")
-	varVmVcpu            = ankaVar("VM_VCPU")
+	varDebug                     = ankaVar("DEBUG")
+	varControllerURL             = ankaVar("CONTROLLER_URL")
+	varTemplateId                = ankaVar("TEMPLATE_ID")
+	varTemplateTag               = ankaVar("TEMPLATE_TAG")
+	varNodeId                    = ankaVar("NODE_ID")
+	varPriority                  = ankaVar("PRIORITY")
+	varNodeGroupId               = ankaVar("NODE_GROUP_ID")
+	varCaCertPath                = ankaVar("CA_CERT_PATH")
+	varSkipTLSVerify             = ankaVar("SKIP_TLS_VERIFY")
+	varClientCertPath            = ankaVar("CLIENT_CERT_PATH")
+	varClientCertKeyPath         = ankaVar("CLIENT_CERT_KEY_PATH")
+	varSshUserName               = ankaVar("SSH_USER_NAME")
+	varSshPassword               = ankaVar("SSH_PASSWORD")
+	varSshAttempts               = ankaVar("SSH_CONNECTION_ATTEMPTS")
+	varSshConnectionAttemptDelay = ankaVar("SSH_CONNECTION_ATTEMPT_DELAY")
+	varCustomHTTPHeaders         = ankaVar("CUSTOM_HTTP_HEADERS")
+	varKeepAliveOnError          = ankaVar("KEEP_ALIVE_ON_ERROR")
+	varTemplateName              = ankaVar("TEMPLATE_NAME")
+	varBuildsDir                 = ankaVar("BUILDS_DIR")
+	varCacheDir                  = ankaVar("CACHE_DIR")
+	varVmVramMb                  = ankaVar("VM_VRAM_MB")
+	varVmVcpu                    = ankaVar("VM_VCPU")
 
 	// Gitlab vars
 	varGitlabJobId     = gitlabVar("CI_JOB_ID")
@@ -42,28 +47,30 @@ var (
 )
 
 type Environment struct {
-	ControllerURL     string
-	Debug             bool
-	TemplateId        string
-	TemplateTag       string
-	NodeId            string
-	Priority          int
-	NodeGroupId       string
-	CaCertPath        string
-	SkipTLSVerify     bool
-	ClientCertPath    string
-	ClientCertKeyPath string
-	SSHUserName       string
-	SSHPassword       string
-	GitlabJobId       string
-	CustomHttpHeaders map[string]string
-	KeepAliveOnError  bool
-	GitlabJobStatus   jobStatus
-	TemplateName      string
-	BuildsDir         string
-	CacheDir          string
-	VmVramMb          int
-	VmVcpu            int
+	ControllerURL             string
+	Debug                     bool
+	TemplateId                string
+	TemplateTag               string
+	NodeId                    string
+	Priority                  int
+	NodeGroupId               string
+	CaCertPath                string
+	SkipTLSVerify             bool
+	ClientCertPath            string
+	ClientCertKeyPath         string
+	SSHUserName               string
+	SSHPassword               string
+	SSHAttempts               int
+	SSHConnectionAttemptDelay int
+	GitlabJobId               string
+	CustomHttpHeaders         map[string]string
+	KeepAliveOnError          bool
+	GitlabJobStatus           jobStatus
+	TemplateName              string
+	BuildsDir                 string
+	CacheDir                  string
+	VmVramMb                  int
+	VmVcpu                    int
 }
 
 type jobStatus string
@@ -75,8 +82,18 @@ var (
 	JobStatusRunning  jobStatus = "running"
 )
 
+var sshPassword = flag.String("ssh-password", "", "the password used to SSH into the VM")
+var sshUserName = flag.String("ssh-username", "", "the username used to SSH into the VM")
+
 func InitEnv() (Environment, error) {
-	e := Environment{}
+	// parse command line flags defined above
+	flag.Parse()
+	e := Environment{
+		// load initial values from command line flags
+		SSHPassword: *sshPassword,
+		SSHUserName: *sshUserName,
+	}
+
 	var ok bool
 	if e.ControllerURL, ok = os.LookupEnv(varControllerURL); !ok {
 		return e, fmt.Errorf("%w: %s", ErrMissingVar, varControllerURL)
@@ -90,8 +107,13 @@ func InitEnv() (Environment, error) {
 		return e, fmt.Errorf("%w: %s", ErrMissingVar, varGitlabJobId)
 	}
 
-	e.SSHUserName = os.Getenv(varSshUserName)
-	e.SSHPassword = os.Getenv(varSshPassword)
+	if os.Getenv(varSshUserName) != "" {
+		e.SSHUserName = os.Getenv(varSshUserName)
+	}
+	if os.Getenv(varSshPassword) != "" {
+		e.SSHPassword = os.Getenv(varSshPassword)
+	}
+
 	e.TemplateId = os.Getenv(varTemplateId)
 	e.TemplateName = os.Getenv(varTemplateName)
 	e.TemplateTag = os.Getenv(varTemplateTag)
@@ -157,6 +179,20 @@ func InitEnv() (Environment, error) {
 			return e, fmt.Errorf("%w vcpu must be 1 or higher", ErrInvalidVar)
 		}
 		e.VmVcpu = vcpu
+	}
+
+	if sshAttempts, ok, err := GetIntEnvVar(varSshAttempts); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshAttempts, err)
+		}
+		e.SSHAttempts = sshAttempts
+	}
+
+	if sshConnectionAttemptDelay, ok, err := GetIntEnvVar(varSshConnectionAttemptDelay); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varSshConnectionAttemptDelay, err)
+		}
+		e.SSHConnectionAttemptDelay = sshConnectionAttemptDelay
 	}
 
 	return e, nil

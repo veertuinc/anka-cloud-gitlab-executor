@@ -11,7 +11,13 @@ A [Gitlab Runner Custom Executor](https://docs.gitlab.com/runner/executors/custo
 1. Download the binary to the same machine your Gitlab Runner is running on.
 2. Add the following `[runners.custom]` block to Gitlab Runner configuration:
     > By default, runner config is at `~/.gitlab-runner/config.toml`
+
+    > Any environment variables can be specified in the `environment` block and apply to all jobs. However, they are also available in the job's environment, so avoid placing SSH credentials and other sensitive variables in the `environment` block.
     ```
+    environment = [
+      "ANKA_CLOUD_CONTROLLER_URL=https://anka.contoller:8090",
+      "ANKA_CLOUD_TEMPLATE_ID=8c592f53-65a4-444e-9342-79d3ff07837c",
+    ]
     [runners.custom]
         config_exec = "/path/to/anka-cloud-gitlab-executor"
         config_args = ["config"]
@@ -48,16 +54,34 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_CA_CERT_PATH | ❌ | String | If Controller is using a self-signed cert, CA file can be passed in for the runner to use when communicating with Controller. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Certificate. **_The path is accessed locally by the Runner_** |
 | ANKA_CLOUD_CLIENT_CERT_KEY_PATH | ❌ | String | If Client Cert Authentication is enabled, this is the path for the Key. **_The path is accessed locally by the Runner_** |
-| ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka" |
-| ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin" |
 | ANKA_CLOUD_CUSTOM_HTTP_HEADERS | ❌ | Object | key-value JSON object for custom headers to set when communicatin with Controller. Both keys and values must be strings  |
 | ANKA_CLOUD_KEEP_ALIVE_ON_ERROR | ❌ | Boolean | Do not terminate Instance if job failed. This will leave the VM running until manually cleaned. Usually, this is used to inspect the VM post failing. If job was canceled, VM will be cleaned regardless of this variable. **There will be no indication for this behavior on the Job's output unless Gitlab Debug is enabled** |
 | ANKA_CLOUD_VM_VCPU | ❌ | Number | Set number of CPU num for the VM. Only works on `stopped` templates. Minimum value of 1 |
 | ANKA_CLOUD_VM_VRAM_MB | ❌ | Number | Set RAM in MiB for the VM. Only works on `stopped` templates. Minimum value of 1 |
 | ANKA_CLOUD_BUILDS_DIR | ❌ | String | Absolute path to a directory where builds are stored in the VM. If not supplied, "/tmp/builds" is used. |
 | ANKA_CLOUD_CACHE_DIR | ❌ | String | Absolute path to a directory where build caches are stored in the VM. If not supplied, "/tmp/cache" is used. |
+| ANKA_CLOUD_SSH_CONNECTION_ATTEMPTS | ❌ | Number | The attempts to make when sshing to the VM. Useful when VMs take a long time to start under stressful situations or slow disks (like EBS). Defaults to `4` -- Minimum value of 1 |
+| ANKA_CLOUD_SSH_CONNECTION_ATTEMPT_DELAY | ❌ | Number | The delay between ssh connection attempts in seconds. Defaults to `5` |
+| ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
+| ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
+
+To prevent SSH credentials from being exposed to the job log, they can instead be specified via command line arguments in the config.toml > runner.custom:
+
+  > Note: values specified via job environment variables will override those provided via command line arguments.
+  ```
+    [runners.custom]
+        config_exec = "/path/to/anka-cloud-gitlab-executor"
+        config_args = ["config"]
+        prepare_exec = "/path/to/anka-cloud-gitlab-executor"
+        prepare_args = ["prepare"]
+        run_exec = "/path/to/anka-cloud-gitlab-executor"
+        run_args = ["run", "--ssh-username", "anka", "--ssh-password", "admin"]
+        cleanup_exec = "/path/to/anka-cloud-gitlab-executor"
+        cleanup_args = ["cleanup"]
+  ```
 
 ### Examples
+
 Example basic pipeline:
 ```
 variables:
@@ -153,3 +177,4 @@ This project produces a single binary, that accepts the current Gitlab stage as 
 2. Prepare (Creates the Instance on the Anka Cloud, waiting for it to get scheduled)
 3. Run (Creates a remote shell on the VM, and pushes Gitlab provided script with stdin)
 4. Cleanup (Performs Termination request to the Anka Cloud Controller)
+

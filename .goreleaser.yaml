@@ -8,8 +8,8 @@ before:
 builds:
   - main: cmd/anka-cloud-gitlab-executor/main.go
     ldflags: >
-      -X github.com/veertuinc/anka-cloud-gitlab-executor/internal/version.Version={{.Version}}
-      -X github.com/veertuinc/anka-cloud-gitlab-executor/internal/version.Commit={{.ShortCommit}}
+      -X github.com/veertuinc/anka-cloud-gitlab-executor/internal/version.version={{.Version}}
+      -X github.com/veertuinc/anka-cloud-gitlab-executor/internal/version.commit={{.ShortCommit}}
     env:
       - CGO_ENABLED=0
     goos:
