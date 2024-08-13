@@ -19,7 +19,7 @@ const (
 var (
 	// Custom Executor vars
 	varDebug                     = ankaVar("DEBUG")
-	varQuietLogging              = ankaVar("QUIET_LOGGING")
+	varQuietLogging              = ankaVar("QUIETER_LOGGING")
 	varControllerURL             = ankaVar("CONTROLLER_URL")
 	varTemplateId                = ankaVar("TEMPLATE_ID")
 	varTemplateTag               = ankaVar("TEMPLATE_TAG")

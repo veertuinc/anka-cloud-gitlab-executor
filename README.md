@@ -64,6 +64,7 @@ Accepted values for booleans are: "1", "t", "T", "true", "TRUE", "True", "0", "f
 | ANKA_CLOUD_SSH_CONNECTION_ATTEMPT_DELAY | ❌ | Number | The delay between ssh connection attempts in seconds. Defaults to `5` |
 | ANKA_CLOUD_SSH_USER_NAME | ❌ | String | SSH user name to use inside VM. Defaults to "anka". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
 | ANKA_CLOUD_SSH_PASSWORD | ❌ | String | SSH password to use inside VM. Defaults to "admin". This can also be set via a command line flags to prevent this value from being exposed to the job. See example below. |
+| ANKA_CLOUD_QUIETER_LOGGING | ❌ | Boolean | Reduce verbosity of the job logs. Defaults to `false` |
 
 To prevent SSH credentials from being exposed to the job log, they can instead be specified via command line arguments in the config.toml > runner.custom:
 
