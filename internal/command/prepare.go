@@ -67,7 +67,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		VramMb:                  env.VmVramMb,
 	}
 
-	log.ConditionalColorf("Creating macOS VM with Template %q -- please be patient...", template)
+	log.Colorf("Creating macOS VM with Template %q -- please be patient...", template)
 	log.Debugf("payload %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
