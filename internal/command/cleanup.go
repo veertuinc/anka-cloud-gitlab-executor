@@ -26,10 +26,10 @@ var cleanupCommand = &cobra.Command{
 func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stdout)
 
-	log.Println("running cleanup stage")
+	log.Debugln("running cleanup stage")
 
 	if env.KeepAliveOnError && env.GitlabJobStatus == gitlab.JobStatusFailed {
-		log.Println("keeping VM alive on error")
+		log.Colorln("keeping VM alive on error")
 		return nil
 	}
 
@@ -45,7 +45,7 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	if err != nil {
 		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
 	}
-	log.Printf("instance id: %s\n", instance.Id)
+	log.Debugf("instance id: %s\n", instance.Id)
 
 	err = controller.TerminateInstance(ctx, ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
@@ -53,7 +53,7 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	if err != nil {
 		return fmt.Errorf("failed to terminate instance %q: %w", instance.Id, err)
 	}
-	log.Printf("Issuing termination request for instance %s\n", instance.Id)
+	log.Debugf("Issuing termination request for instance %s\n", instance.Id)
 
 	return nil
 }

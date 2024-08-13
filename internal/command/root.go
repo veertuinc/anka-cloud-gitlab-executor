@@ -29,6 +29,7 @@ func Execute(ctx context.Context) error {
 	}
 
 	log.SetDebug(env.Debug)
+	log.SetQuietLogging(env.QuietLogging)
 
 	return rootCmd.ExecuteContext(context.WithValue(ctx, contextKey("env"), env))
 }

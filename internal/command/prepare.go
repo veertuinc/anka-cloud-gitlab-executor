@@ -26,7 +26,7 @@ var prepareCommand = &cobra.Command{
 
 func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
-	log.Println("running prepare stage")
+	log.Debugln("running prepare stage")
 
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
@@ -35,17 +35,21 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	}
 	controller := ankacloud.NewController(apiClient)
 
+	var template string
 	templateId := env.TemplateId
 	if templateId == "" {
 		if env.TemplateName == "" {
 			return fmt.Errorf("%w: either template id or temaplte name must be specified", gitlab.ErrMissingVar)
 		}
-		log.Println("please consider using template id instead of template name, since template names are not guaranteed to be unique")
+		log.Warnln("please consider using template id instead of template name as template names are not guaranteed to be unique")
 		templateId, err = controller.GetTemplateIdByName(ctx, env.TemplateName)
 		if err != nil {
 			return fmt.Errorf("failed to get template id of template named %q: %w", env.TemplateName, err)
 		}
-		log.Printf("template with id %q and name %q will be used\n", templateId, env.TemplateName)
+		log.Colorf("template with id %q and name %q will be used\n", templateId, env.TemplateName)
+		template = env.TemplateName
+	} else {
+		template = templateId
 	}
 
 	req := ankacloud.CreateInstanceRequest{
@@ -59,21 +63,23 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		StartupScriptMonitoring: true,
 		StartupScriptTimeout:    5 * 60,
 		StartupScript:           base64.StdEncoding.EncodeToString([]byte("sleep 5")), // even though we wait for network, it is recommended to wait a bit more
-		Vcpu:        env.VmVcpu,
-		VramMb:      env.VmVramMb,
+		Vcpu:                    env.VmVcpu,
+		VramMb:                  env.VmVramMb,
 	}
 
-	log.Printf("creating instance with config: %+v\n", req)
+	log.ConditionalColorf("Creating macOS VM with Template %q -- please be patient...", template)
+	log.Debugf("payload %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to create instance: %w", err)
 	}
 
-	if err := controller.WaitForInstanceToBeScheduled(ctx, instanceId); err != nil {
+	instance, err := controller.WaitForInstanceToBeScheduled(ctx, instanceId)
+	if err != nil {
 		return fmt.Errorf("failed to wait for instance %q to be scheduled: %w", instanceId, err)
 	}
 
-	log.Printf("created instance id: %s\n", instanceId)
+	log.Colorf("VM %s (%s) is ready for work on node %s (%s)\n", instance.VMInfo.Name, instance.Id, instance.Node.Name, instance.Node.IP)
 
 	return nil
 }

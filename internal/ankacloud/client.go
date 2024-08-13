@@ -62,7 +62,7 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 	}
 
 	for k, v := range c.CustomHttpHeaders {
-		log.Debugf("Setting custom header %s: %s\n", k, v)
+		log.Printf("Setting custom header %s: %s\n", k, v)
 		req.Header.Set(k, v)
 	}
 

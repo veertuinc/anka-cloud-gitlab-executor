@@ -14,7 +14,9 @@ type controller struct {
 }
 
 type Node struct {
-	IP string `json:"ip_address"`
+	Id   string `json:"node_id"`
+	Name string `json:"node_name"`
+	IP   string `json:"ip_address"`
 }
 
 type Template struct {
@@ -37,6 +39,7 @@ const (
 )
 
 type VM struct {
+	Name                string               `json:"name"`
 	PortForwardingRules []PortForwardingRule `json:"port_forwarding,omitempty"`
 }
 type PortForwardingRule struct {
@@ -49,8 +52,9 @@ type Instance struct {
 	State      InstanceState `json:"instance_state"`
 	Id         string        `json:"instance_id"`
 	ExternalId string        `json:"external_id"`
-	VM         *VM           `json:"vminfo,omitempty"`
-	NodeId     string        `json:"node_id,omitempty"`
+	VMInfo     *VM           `json:"vminfo,omitempty"`
+	NodeId     string        `json:"node_id"`
+	Node       *Node         `json:"node,omitempty"`
 	Progress   float32       `json:"progress,omitempty"`
 }
 
@@ -119,32 +123,35 @@ func (c *controller) CreateInstance(ctx context.Context, payload CreateInstanceR
 	return response.InstanceIds[0], nil
 }
 
-func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) error {
-	const pollingInterval = 3 * time.Second
-
-	log.Printf("waiting for instance %s to be scheduled\n", instanceId)
+func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) (*Instance, error) {
+	const pollingInterval = 10 * time.Second
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		case <-time.After(pollingInterval):
 			instance, err := c.GetInstance(ctx, GetInstanceRequest{Id: instanceId})
 			if err != nil {
-				return fmt.Errorf("failed to get instance %q status: %w", instanceId, err)
+				return nil, fmt.Errorf("failed to get instance %q status: %w", instanceId, err)
 			}
-
-			log.Printf("instance %s is in state %q\n", instanceId, instance.State)
+			log.ConditionalColorf("instance %s is in state %q\n", instanceId, instance.State)
 			switch instance.State {
 			case StateScheduling:
 				break
 			case StatePulling:
 				if instance.Progress != 0 {
-					log.Printf("pulling progress: %.0f%%\n", instance.Progress*100)
+					log.ConditionalColorf("pulling progress: %.0f%%\n", instance.Progress*100)
 				}
 			case StateStarted:
-				return nil
+				// get the rest of the node details
+				node, err := c.GetNode(ctx, GetNodeRequest{Id: instance.NodeId})
+				if err != nil {
+					return nil, fmt.Errorf("failed to get node %s: %w", instance.Node.Id, err)
+				}
+				instance.Node = node
+				return instance, nil
 			default:
-				return fmt.Errorf("instance %s is in an unexpected state: %s", instanceId, instance.State)
+				return nil, fmt.Errorf("instance %s is in an unexpected state: %s", instanceId, instance.State)
 			}
 		}
 	}
