@@ -19,6 +19,7 @@ const (
 var (
 	// Custom Executor vars
 	varDebug                     = ankaVar("DEBUG")
+	varQuietLogging              = ankaVar("QUIETER_LOGGING")
 	varControllerURL             = ankaVar("CONTROLLER_URL")
 	varTemplateId                = ankaVar("TEMPLATE_ID")
 	varTemplateTag               = ankaVar("TEMPLATE_TAG")
@@ -49,6 +50,7 @@ var (
 type Environment struct {
 	ControllerURL             string
 	Debug                     bool
+	QuietLogging              bool
 	TemplateId                string
 	TemplateTag               string
 	NodeId                    string
@@ -138,6 +140,13 @@ func InitEnv() (Environment, error) {
 			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varDebug, err)
 		}
 		e.Debug = debug
+	}
+
+	if quietLogging, ok, err := GetBoolEnvVar(varQuietLogging); ok {
+		if err != nil {
+			return e, fmt.Errorf("%w %q: %w", ErrInvalidVar, varQuietLogging, err)
+		}
+		e.QuietLogging = quietLogging
 	}
 
 	if skip, ok, err := GetBoolEnvVar(varSkipTLSVerify); ok {

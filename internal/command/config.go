@@ -1,7 +1,6 @@
 package command
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -20,7 +19,7 @@ var configCommand = &cobra.Command{
 			return fmt.Errorf("failed to get environment from context")
 		}
 
-		return executeConfig(cmd.Context(), env)
+		return executeConfig(env)
 	},
 }
 
@@ -37,20 +36,20 @@ type driver struct {
 	Version string `json:"version"`
 }
 
-func executeConfig(ctx context.Context, env gitlab.Environment) error {
+func executeConfig(env gitlab.Environment) error {
 	log.SetOutput(os.Stderr)
-	log.Println("running config stage")
+	log.Debugln("running config stage")
 
 	buildsDir := "/tmp/builds"
 	cacheDir := "/tmp/cache"
 
 	if env.BuildsDir != "" {
-		log.Printf("using supplied builds dir %q", env.BuildsDir)
+		log.Colorf("using supplied builds dir %q", env.BuildsDir)
 		buildsDir = env.BuildsDir
 	}
 
 	if env.CacheDir != "" {
-		log.Printf("using supplied cache dir %q", env.CacheDir)
+		log.Colorf("using supplied cache dir %q", env.CacheDir)
 		cacheDir = env.CacheDir
 	}
 

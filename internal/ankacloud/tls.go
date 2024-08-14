@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
 func configureTLS(config APIClientConfig) (*tls.Config, error) {
-	log.Println("handling TLS configuration")
+	log.Debugln("handling TLS configuration")
 
 	tlsConfig := &tls.Config{}
 	caCertPool, _ := x509.SystemCertPool()
@@ -22,11 +23,11 @@ func configureTLS(config APIClientConfig) (*tls.Config, error) {
 		if err := appendRootCert(config.CaCertPath, caCertPool); err != nil {
 			return nil, fmt.Errorf("failed to add CA cert from %q to pool: %w", config.CaCertPath, err)
 		}
-		log.Printf("added CA cert at %q\n", config.CaCertPath)
+		log.ConditionalColorf("using CA cert from %q\n", config.CaCertPath)
 	}
 
 	if config.SkipTLSVerify {
-		log.Println("allowing to skip server host verification")
+		log.ConditionalColorf("allowing to skip server host verification")
 		tlsConfig.InsecureSkipVerify = true
 	}
 
