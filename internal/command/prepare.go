@@ -76,7 +76,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 
 	instance, err := controller.WaitForInstanceToBeScheduled(ctx, instanceId)
 	if err != nil {
-		return fmt.Errorf("failed to wait for instance %q to be scheduled: %w", instanceId, err)
+		return gitlab.TransientError(fmt.Errorf("failed to wait for instance %q to be scheduled: %w", instanceId, err))
 	}
 
 	log.Colorf("VM %s (%s) is ready for work on node %s (%s)\n", instance.VMInfo.Name, instance.Id, instance.Node.Name, instance.Node.IP)
