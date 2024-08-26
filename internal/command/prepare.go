@@ -69,10 +69,10 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 
 	var tagName string
 	if env.TemplateTag == "" {
-		tagName = "latest"
+		tagName = "(latest)"
 	}
 
-	log.Colorf("Creating macOS VM with Template %q and Tag \"%q\" -- please be patient...", template, tagName)
+	log.Colorf("Creating macOS VM with Template %q and Tag %q -- please be patient...", template, tagName)
 	log.Debugf("payload %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
