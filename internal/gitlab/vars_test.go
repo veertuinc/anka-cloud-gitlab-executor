@@ -9,7 +9,7 @@ import (
 
 func TestControllerWithTrailingSlash(t *testing.T) {
 	os.Setenv(varControllerURL, "http://fake-controller-url/")
-	os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+	os.Setenv(varGitlabJobUrl, "fake-gitlab-job-url")
 	defer os.Clearenv()
 
 	env, err := InitEnv()
@@ -24,7 +24,7 @@ func TestControllerWithTrailingSlash(t *testing.T) {
 
 func TestCustomHttpHeadersEnvVar(t *testing.T) {
 	os.Setenv(varControllerURL, "http://fake-controller-url")
-	os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+	os.Setenv(varGitlabJobUrl, "fake-gitlab-job-url")
 	os.Setenv(varCustomHTTPHeaders, "{\"fake-header\":\"fake-value\", \"fake-header2\":\"fake-value2\"}")
 	defer os.Clearenv()
 	env, err := InitEnv()
@@ -74,8 +74,8 @@ func TestGitlabJobIdMissing(t *testing.T) {
 	if !errors.Is(err, ErrMissingVar) {
 		t.Errorf("expected error %q, got %q", ErrMissingVar, err)
 	}
-	if !strings.Contains(err.Error(), varGitlabJobId) {
-		t.Errorf("expected error to contain %q, got %q", varGitlabJobId, err)
+	if !strings.Contains(err.Error(), varGitlabJobUrl) {
+		t.Errorf("expected error to contain %q, got %q", varGitlabJobUrl, err)
 	}
 }
 
@@ -103,7 +103,7 @@ func TestInvalidVram(t *testing.T) {
 	for _, tc := range testCases {
 		os.Clearenv()
 		os.Setenv(varControllerURL, "http://fake-controller-url")
-		os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
+		os.Setenv(varGitlabJobUrl, "fake-gitlab-job-url")
 
 		os.Setenv(varVmVcpu, tc.vram)
 
@@ -141,8 +141,7 @@ func TestInvalidVcpu(t *testing.T) {
 	for _, tc := range testCases {
 		os.Clearenv()
 		os.Setenv(varControllerURL, "http://fake-controller-url")
-		os.Setenv(varGitlabJobId, "fake-gitlab-job-id")
-
+		os.Setenv(varGitlabJobUrl, "fake-gitlab-job-url")
 		os.Setenv(varVmVcpu, tc.vcpu)
 
 		_, err := InitEnv()

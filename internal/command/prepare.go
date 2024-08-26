@@ -54,7 +54,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 
 	req := ankacloud.CreateInstanceRequest{
 		TemplateId:              templateId,
-		ExternalId:              env.GitlabJobId,
+		ExternalId:              env.GitlabJobUrl,
 		Tag:                     env.TemplateTag,
 		NodeId:                  env.NodeId,
 		Priority:                env.Priority,

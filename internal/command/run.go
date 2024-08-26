@@ -43,9 +43,9 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	controller := ankacloud.NewController(apiClient)
 
-	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobUrl)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobUrl, err)
 	}
 
 	var nodeSshPort string

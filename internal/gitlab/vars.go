@@ -43,7 +43,7 @@ var (
 	varVmVcpu                    = ankaVar("VM_VCPU")
 
 	// Gitlab vars
-	varGitlabJobId     = gitlabVar("CI_JOB_ID")
+	varGitlabJobUrl    = gitlabVar("CI_JOB_URL")
 	varGitlabJobStatus = gitlabVar("CI_JOB_STATUS")
 )
 
@@ -64,7 +64,7 @@ type Environment struct {
 	SSHPassword               string
 	SSHAttempts               int
 	SSHConnectionAttemptDelay int
-	GitlabJobId               string
+	GitlabJobUrl              string
 	CustomHttpHeaders         map[string]string
 	KeepAliveOnError          bool
 	GitlabJobStatus           jobStatus
@@ -105,8 +105,8 @@ func InitEnv() (Environment, error) {
 		return e, fmt.Errorf("%w %q: missing http prefix", ErrInvalidVar, e.ControllerURL)
 	}
 
-	if e.GitlabJobId, ok = os.LookupEnv(varGitlabJobId); !ok {
-		return e, fmt.Errorf("%w: %s", ErrMissingVar, varGitlabJobId)
+	if e.GitlabJobUrl, ok = os.LookupEnv(varGitlabJobUrl); !ok {
+		return e, fmt.Errorf("%w: %s", ErrMissingVar, varGitlabJobUrl)
 	}
 
 	if os.Getenv(varSshUserName) != "" {
