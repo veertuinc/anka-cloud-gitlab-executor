@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,7 @@ import (
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/command"
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/gitlab"
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
+	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/version"
 )
 
 var (
@@ -27,6 +29,12 @@ func main() {
 }
 
 func run() int {
+
+	if len(os.Args) > 1 && os.Args[1] == "--version" {
+		fmt.Printf("%s", version.Get())
+		return 0
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	defer stop()
 
