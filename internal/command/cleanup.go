@@ -41,9 +41,9 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 
 	controller := ankacloud.NewController(apiClient)
 
-	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobId)
+	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobUrl)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobId, err)
+		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobUrl, err)
 	}
 	log.Debugf("instance id: %s\n", instance.Id)
 

@@ -54,7 +54,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 
 	req := ankacloud.CreateInstanceRequest{
 		TemplateId:              templateId,
-		ExternalId:              env.GitlabJobId,
+		ExternalId:              env.GitlabJobUrl,
 		Tag:                     env.TemplateTag,
 		NodeId:                  env.NodeId,
 		Priority:                env.Priority,
@@ -67,7 +67,12 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 		VramMb:                  env.VmVramMb,
 	}
 
-	log.Colorf("Creating macOS VM with Template %q -- please be patient...", template)
+	var tagName string
+	if env.TemplateTag == "" {
+		tagName = "(latest)"
+	}
+
+	log.Colorf("Creating macOS VM with Template %q and Tag %q -- please be patient...", template, tagName)
 	log.Debugf("payload %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
