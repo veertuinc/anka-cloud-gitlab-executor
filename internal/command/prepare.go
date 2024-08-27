@@ -68,7 +68,8 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	}
 
 	var tagName string
-	if env.TemplateTag == "" {
+	tagName = env.TemplateTag
+	if tagName == "" {
 		tagName = "(latest)"
 	}
 
