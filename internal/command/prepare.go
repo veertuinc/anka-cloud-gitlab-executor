@@ -39,7 +39,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	templateId := env.TemplateId
 	if templateId == "" {
 		if env.TemplateName == "" {
-			return fmt.Errorf("%w: either template id or temaplte name must be specified", gitlab.ErrMissingVar)
+			return fmt.Errorf("%w: either template id or template name must be specified", gitlab.ErrMissingVar)
 		}
 		log.Warnln("please consider using template id instead of template name as template names are not guaranteed to be unique")
 		templateId, err = controller.GetTemplateIdByName(ctx, env.TemplateName)
