@@ -38,19 +38,19 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
+		return gitlab.TransientError(fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err))
 	}
 
 	controller := ankacloud.NewController(apiClient)
 
 	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobUrl)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobUrl, err)
+		return gitlab.TransientError(fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobUrl, err))
 	}
 
 	var nodeSshPort string
 	if instance.VMInfo == nil {
-		return fmt.Errorf("instance has no VM: %+v", instance)
+		return gitlab.TransientError(fmt.Errorf("instance has no VM: %+v", instance))
 	}
 
 	for _, rule := range instance.VMInfo.PortForwardingRules {
@@ -59,13 +59,13 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		}
 	}
 	if nodeSshPort == "" {
-		return fmt.Errorf("could not find ssh port forwarded for vm")
+		return gitlab.TransientError(fmt.Errorf("could not find ssh port forwarded for vm"))
 	}
 	log.Debugf("node SSH port to VM: %s\n", nodeSshPort)
 
 	gitlabScriptFile, err := os.Open(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to open script file at %q: %w", args[0], err)
+		return gitlab.TransientError(fmt.Errorf("failed to open script file at %q: %w", args[0], err))
 	}
 	defer gitlabScriptFile.Close()
 	log.Debugf("gitlab script path: %s", args[0])
@@ -90,7 +90,7 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	node, err := controller.GetNode(ctx, ankacloud.GetNodeRequest{Id: instance.NodeId})
 	if err != nil {
-		return fmt.Errorf("failed to get node %s: %w", instance.NodeId, err)
+		return gitlab.TransientError(fmt.Errorf("failed to get node %s: %w", instance.NodeId, err))
 	}
 
 	addr := fmt.Sprintf("%s:%s", node.IP, nodeSshPort)
@@ -114,7 +114,7 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 		time.Sleep(time.Duration(sshConnectionAttemptDelay) * time.Second)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to create new ssh client connection to %q: %w", addr, err)
+		return gitlab.TransientError(fmt.Errorf("failed to create new ssh client connection to %q: %w", addr, err))
 	}
 	defer sshClient.Close()
 
@@ -122,7 +122,7 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	session, err := sshClient.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to start new ssh session: %w", err)
+		return gitlab.TransientError(fmt.Errorf("failed to start new ssh session: %w", err))
 	}
 	defer session.Close()
 	log.Debugln("ssh session opened")
@@ -133,7 +133,7 @@ func executeRun(ctx context.Context, env gitlab.Environment, args []string) erro
 
 	err = session.Shell()
 	if err != nil {
-		return fmt.Errorf("failed to start Shell on SSH session: %w", err)
+		return gitlab.TransientError(fmt.Errorf("failed to start Shell on SSH session: %w", err))
 	}
 
 	log.Debugln("waiting for remote execution to finish")

@@ -31,7 +31,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
+		return gitlab.TransientError(fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err))
 	}
 	controller := ankacloud.NewController(apiClient)
 
@@ -77,7 +77,7 @@ func executePrepare(ctx context.Context, env gitlab.Environment) error {
 	log.Debugf("payload %+v\n", req)
 	instanceId, err := controller.CreateInstance(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create instance: %w", err)
+		return gitlab.TransientError(fmt.Errorf("failed to create instance: %w", err))
 	}
 
 	instance, err := controller.WaitForInstanceToBeScheduled(ctx, instanceId)
