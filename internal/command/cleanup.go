@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/ankacloud"
@@ -24,9 +23,9 @@ var cleanupCommand = &cobra.Command{
 }
 
 func executeCleanup(ctx context.Context, env gitlab.Environment) error {
-	log.SetOutput(os.Stdout)
+	// log.SetOutput(os.Stdout) // prevents us from logging Println, etc
 
-	log.Debugln("running cleanup stage")
+	log.Println("cleanup stage started for job: ", env.GitlabJobUrl)
 
 	if env.KeepAliveOnError && env.GitlabJobStatus == gitlab.JobStatusFailed {
 		log.Colorln("keeping VM alive on error")
@@ -36,14 +35,16 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	apiClientConfig := getAPIClientConfig(env)
 	apiClient, err := ankacloud.NewAPIClient(apiClientConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initialize API client with config +%v: %w", apiClientConfig, err)
+		log.Errorf("cleanup: failed to initialize API client with config +%v: %v", apiClientConfig, err)
+		return fmt.Errorf("cleanup: failed to initialize API client with config +%v: %v", apiClientConfig, err)
 	}
 
 	controller := ankacloud.NewController(apiClient)
 
 	instance, err := controller.GetInstanceByExternalId(ctx, env.GitlabJobUrl)
 	if err != nil {
-		return fmt.Errorf("failed to get instance by external id %q: %w", env.GitlabJobUrl, err)
+		log.Errorf("cleanup: failed to get instance by external id %q: %v", env.GitlabJobUrl, err)
+		return fmt.Errorf("cleanup: failed to get instance by external id %q: %v", env.GitlabJobUrl, err)
 	}
 	log.Debugf("instance id: %s\n", instance.Id)
 
@@ -51,7 +52,8 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 		Id: instance.Id,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to terminate instance %q: %w", instance.Id, err)
+		log.Errorf("cleanup: failed to terminate instance %q: %v", instance.Id, err)
+		return fmt.Errorf("cleanup: failed to terminate instance %q: %v", instance.Id, err)
 	}
 	log.Debugf("Issuing termination request for instance %s\n", instance.Id)
 
