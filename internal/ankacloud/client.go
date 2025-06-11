@@ -33,7 +33,7 @@ func (c *APIClient) parse(body []byte) (response, error) {
 	}
 
 	if r.Status != statusOK {
-		return r, fmt.Errorf(r.Message)
+		return r, fmt.Errorf("%s", r.Message)
 	}
 
 	return r, nil
