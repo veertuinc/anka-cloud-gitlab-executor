@@ -48,6 +48,7 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	}
 	log.Debugf("instance id: %s\n", instance.Id)
 
+	log.Debugf("Issuing termination request for instance %s\n", instance.Id)
 	err = controller.TerminateInstance(ctx, ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
 	})
@@ -55,7 +56,7 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 		log.Errorf("cleanup: failed to terminate instance %q: %v", instance.Id, err)
 		return fmt.Errorf("cleanup: failed to terminate instance %q: %v", instance.Id, err)
 	}
-	log.Debugf("Issuing termination request for instance %s\n", instance.Id)
 
+	log.Println("cleanup stage completed for job: ", env.GitlabJobUrl)
 	return nil
 }
