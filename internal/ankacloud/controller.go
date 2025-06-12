@@ -195,6 +195,9 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
+	if len(instances) == 0 {
+		return nil, fmt.Errorf("no instances returned from controller")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instances: %w", err)
 	}
