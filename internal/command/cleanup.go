@@ -57,6 +57,6 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 		return fmt.Errorf("cleanup: failed to terminate instance %q: %v", instance.Id, err)
 	}
 
-	log.Println("cleanup stage completed for job: ", env.GitlabJobUrl)
+	log.Colorf("cleanup stage completed for job: %s", env.GitlabJobUrl)
 	return nil
 }
