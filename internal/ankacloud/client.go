@@ -79,6 +79,7 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		if strings.Contains(err.Error(), "unexpected EOF") {
+			time.Sleep(5 * time.Second)
 			// Retry once on unexpected EOF
 			r2, err2 := c.HttpClient.Do(req)
 			if err2 != nil {
@@ -143,6 +144,7 @@ func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interfa
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		if strings.Contains(err.Error(), "unexpected EOF") {
+			time.Sleep(5 * time.Second)
 			// Retry once on unexpected EOF
 			r2, err2 := c.HttpClient.Do(req)
 			if err2 != nil {
@@ -204,6 +206,7 @@ func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[st
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		if strings.Contains(err.Error(), "unexpected EOF") {
+			time.Sleep(5 * time.Second)
 			// Retry once on unexpected EOF
 			r2, err2 := c.HttpClient.Do(req)
 			if err2 != nil {
