@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/gitlab"
@@ -77,7 +78,25 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		if strings.Contains(err.Error(), "unexpected EOF") {
+			// Retry once on unexpected EOF
+			r2, err2 := c.HttpClient.Do(req)
+			if err2 != nil {
+				if e, ok := err2.(*url.Error); ok && e.Timeout() {
+					return nil, gitlab.TransientError(fmt.Errorf("failed to send POST request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
+				}
+				return nil, fmt.Errorf("failed to send POST request to %s with payload %+v (retry): %w", endpoint, payload, err2)
+			}
+			defer r2.Body.Close()
+
+			bodyBytes, err2 = io.ReadAll(r2.Body)
+			if err2 != nil {
+				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
+			}
+			r = r2
+		} else {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
@@ -123,7 +142,25 @@ func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interfa
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		if strings.Contains(err.Error(), "unexpected EOF") {
+			// Retry once on unexpected EOF
+			r2, err2 := c.HttpClient.Do(req)
+			if err2 != nil {
+				if e, ok := err2.(*url.Error); ok && e.Timeout() {
+					return nil, gitlab.TransientError(fmt.Errorf("failed to send DELETE request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
+				}
+				return nil, fmt.Errorf("failed to send DELETE request to %s with payload %+v (retry): %w", endpoint, payload, err2)
+			}
+			defer r2.Body.Close()
+
+			bodyBytes, err2 = io.ReadAll(r2.Body)
+			if err2 != nil {
+				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
+			}
+			r = r2
+		} else {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
@@ -166,7 +203,25 @@ func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[st
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		if strings.Contains(err.Error(), "unexpected EOF") {
+			// Retry once on unexpected EOF
+			r2, err2 := c.HttpClient.Do(req)
+			if err2 != nil {
+				if e, ok := err2.(*url.Error); ok && e.Timeout() {
+					return nil, gitlab.TransientError(fmt.Errorf("failed to send GET request to %s (retry): %w", endpointUrl, e))
+				}
+				return nil, fmt.Errorf("failed to send GET request to %s (retry): %w", endpointUrl, err2)
+			}
+			defer r2.Body.Close()
+
+			bodyBytes, err2 = io.ReadAll(r2.Body)
+			if err2 != nil {
+				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
+			}
+			r = r2
+		} else {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
