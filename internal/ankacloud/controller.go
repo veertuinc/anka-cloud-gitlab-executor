@@ -185,6 +185,13 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
 
+	log.ConditionalColorf("got %d instances back from controller\n", len(response.Instances))
+	body, err = json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response body %q: %w", string(body), err)
+	}
+	log.ConditionalColorf("instances response: %s\n", string(body))
+
 	var instances []Instance
 	for _, instanceWrapper := range response.Instances {
 		instances = append(instances, *instanceWrapper.Instance)
@@ -195,9 +202,11 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
+
 	if len(instances) == 0 {
-		return nil, fmt.Errorf("no instances returned from controller")
+		return nil, fmt.Errorf("no instances returned from controller: %w", err)
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instance by external id %s: %w", externalId, err)
 	}
