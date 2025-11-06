@@ -5,9 +5,9 @@ const (
 )
 
 type response struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	Body    interface{} `json:"body,omitempty"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Body    any    `json:"body,omitempty"`
 }
 
 type StartupScriptCondition int

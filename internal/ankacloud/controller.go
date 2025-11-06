@@ -35,7 +35,6 @@ const (
 	StateTerminating InstanceState = "Terminating"
 	StateTerminated  InstanceState = "Terminated"
 	StateError       InstanceState = "Error"
-	StatePushing     InstanceState = "Pushing"
 )
 
 type VM struct {
@@ -176,7 +175,7 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 	body, err := c.APIClient.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get instances: %w", err)
+		return nil, fmt.Errorf("failed to get all instances: %w", err)
 	}
 
 	var response getAllInstancesResponse
@@ -184,6 +183,13 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse response body %q: %w", string(body), err)
 	}
+
+	log.ConditionalColorf("got %d instances back from controller\n", len(response.Instances))
+	body, err = json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response body %q: %w", string(body), err)
+	}
+	log.ConditionalColorf("instances response: %s\n", string(body))
 
 	var instances []Instance
 	for _, instanceWrapper := range response.Instances {
@@ -195,17 +201,38 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get instances: %w", err)
+
+	if len(instances) == 0 {
+		return nil, fmt.Errorf("no instances returned from controller: %w", err)
 	}
 
+	if err != nil {
+		return nil, fmt.Errorf("failed to get instance by external id %s: %w", externalId, err)
+	}
+
+	var matchingInstances []*Instance
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return &instance, nil
+			matchingInstances = append(matchingInstances, &instance)
 		}
 	}
 
-	return nil, fmt.Errorf("instance with external id %s not found", externalId)
+	if len(matchingInstances) == 0 {
+		return nil, fmt.Errorf("instance with external id %s not found", externalId)
+	}
+
+	// If multiple instances with the same external ID exist, prioritize by state
+	// Return the first instance that is in a good state (Started, Scheduling, Pulling)
+	for _, instance := range matchingInstances {
+		switch instance.State {
+		case StateStarted, StateScheduling, StatePulling:
+			return instance, nil
+		}
+	}
+
+	// No instances in a usable state - fail explicitly instead of returning Error/Terminated instances
+	return nil, fmt.Errorf("instance with external id %s exists but is not in a usable state (found state: %s)",
+		externalId, matchingInstances[0].State)
 }
 
 func (c *controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
