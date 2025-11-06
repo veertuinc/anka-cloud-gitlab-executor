@@ -35,7 +35,6 @@ const (
 	StateTerminating InstanceState = "Terminating"
 	StateTerminated  InstanceState = "Terminated"
 	StateError       InstanceState = "Error"
-	StatePushing     InstanceState = "Pushing"
 )
 
 type VM struct {
@@ -227,14 +226,6 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 	for _, instance := range matchingInstances {
 		switch instance.State {
 		case StateStarted, StateScheduling, StatePulling:
-			return instance, nil
-		}
-	}
-
-	// If no instances are in good states, return the first non-terminated/error instance
-	for _, instance := range matchingInstances {
-		switch instance.State {
-		case StatePushing:
 			return instance, nil
 		}
 	}
