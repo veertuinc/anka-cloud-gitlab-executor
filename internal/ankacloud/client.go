@@ -40,6 +40,30 @@ func (c *APIClient) parse(body []byte) (response, error) {
 	return r, nil
 }
 
+// readResponseBodyWithRetry reads the response body and retries once on unexpected EOF
+func (c *APIClient) readResponseBodyWithRetry(resp *http.Response, req *http.Request) ([]byte, *http.Response, error) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		if strings.Contains(err.Error(), "unexpected EOF") {
+			time.Sleep(5 * time.Second)
+			// Retry once on unexpected EOF
+			retryResp, retryErr := c.HttpClient.Do(req)
+			if retryErr != nil {
+				return nil, nil, retryErr
+			}
+			defer retryResp.Body.Close()
+
+			bodyBytes, retryErr = io.ReadAll(retryResp.Body)
+			if retryErr != nil {
+				return nil, nil, fmt.Errorf("failed to read response body (retry): %w", retryErr)
+			}
+			return bodyBytes, retryResp, nil
+		}
+		return nil, nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	return bodyBytes, resp, nil
+}
+
 func toQueryParams(params map[string]string) url.Values {
 	query := url.Values{}
 	for k, v := range params {
@@ -76,28 +100,12 @@ func (c *APIClient) Post(ctx context.Context, endpoint string, payload interface
 	}
 	defer r.Body.Close()
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	bodyBytes, r, err := c.readResponseBodyWithRetry(r, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "unexpected EOF") {
-			time.Sleep(5 * time.Second)
-			// Retry once on unexpected EOF
-			r2, err2 := c.HttpClient.Do(req)
-			if err2 != nil {
-				if e, ok := err2.(*url.Error); ok && e.Timeout() {
-					return nil, gitlab.TransientError(fmt.Errorf("failed to send POST request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
-				}
-				return nil, fmt.Errorf("failed to send POST request to %s with payload %+v (retry): %w", endpoint, payload, err2)
-			}
-			defer r2.Body.Close()
-
-			bodyBytes, err2 = io.ReadAll(r2.Body)
-			if err2 != nil {
-				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
-			}
-			r = r2
-		} else {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("failed to send POST request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
 		}
+		return nil, err
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
@@ -141,28 +149,12 @@ func (c *APIClient) Delete(ctx context.Context, endpoint string, payload interfa
 	}
 	defer r.Body.Close()
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	bodyBytes, r, err := c.readResponseBodyWithRetry(r, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "unexpected EOF") {
-			time.Sleep(5 * time.Second)
-			// Retry once on unexpected EOF
-			r2, err2 := c.HttpClient.Do(req)
-			if err2 != nil {
-				if e, ok := err2.(*url.Error); ok && e.Timeout() {
-					return nil, gitlab.TransientError(fmt.Errorf("failed to send DELETE request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
-				}
-				return nil, fmt.Errorf("failed to send DELETE request to %s with payload %+v (retry): %w", endpoint, payload, err2)
-			}
-			defer r2.Body.Close()
-
-			bodyBytes, err2 = io.ReadAll(r2.Body)
-			if err2 != nil {
-				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
-			}
-			r = r2
-		} else {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("failed to send DELETE request to %s with payload %+v (retry): %w", endpointUrl, payload, e))
 		}
+		return nil, err
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
@@ -203,28 +195,12 @@ func (c *APIClient) Get(ctx context.Context, endpoint string, queryParams map[st
 	}
 	defer r.Body.Close()
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	bodyBytes, r, err := c.readResponseBodyWithRetry(r, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "unexpected EOF") {
-			time.Sleep(5 * time.Second)
-			// Retry once on unexpected EOF
-			r2, err2 := c.HttpClient.Do(req)
-			if err2 != nil {
-				if e, ok := err2.(*url.Error); ok && e.Timeout() {
-					return nil, gitlab.TransientError(fmt.Errorf("failed to send GET request to %s (retry): %w", endpointUrl, e))
-				}
-				return nil, fmt.Errorf("failed to send GET request to %s (retry): %w", endpointUrl, err2)
-			}
-			defer r2.Body.Close()
-
-			bodyBytes, err2 = io.ReadAll(r2.Body)
-			if err2 != nil {
-				return nil, fmt.Errorf("failed to read response body (retry): %w", err2)
-			}
-			r = r2
-		} else {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
+		if e, ok := err.(*url.Error); ok && e.Timeout() {
+			return nil, gitlab.TransientError(fmt.Errorf("failed to send GET request to %s (retry): %w", endpointUrl, e))
 		}
+		return nil, err
 	}
 
 	baseResponse, err := c.parse(bodyBytes)
