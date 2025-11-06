@@ -211,13 +211,36 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 		return nil, fmt.Errorf("failed to get instance by external id %s: %w", externalId, err)
 	}
 
+	var matchingInstances []*Instance
 	for _, instance := range instances {
 		if instance.ExternalId == externalId {
-			return &instance, nil
+			matchingInstances = append(matchingInstances, &instance)
 		}
 	}
 
-	return nil, fmt.Errorf("instance with external id %s not found", externalId)
+	if len(matchingInstances) == 0 {
+		return nil, fmt.Errorf("instance with external id %s not found", externalId)
+	}
+
+	// If multiple instances with the same external ID exist, prioritize by state
+	// Return the first instance that is in a good state (Started, Scheduling, Pulling)
+	for _, instance := range matchingInstances {
+		switch instance.State {
+		case StateStarted, StateScheduling, StatePulling:
+			return instance, nil
+		}
+	}
+
+	// If no instances are in good states, return the first non-terminated/error instance
+	for _, instance := range matchingInstances {
+		switch instance.State {
+		case StatePushing:
+			return instance, nil
+		}
+	}
+
+	// As a last resort, return the first matching instance (could be Error/Terminated)
+	return matchingInstances[0], nil
 }
 
 func (c *controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
