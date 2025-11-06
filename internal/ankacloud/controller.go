@@ -230,8 +230,9 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 		}
 	}
 
-	// As a last resort, return the first matching instance (could be Error/Terminated)
-	return matchingInstances[0], nil
+	// No instances in a usable state - fail explicitly instead of returning Error/Terminated instances
+	return nil, fmt.Errorf("instance with external id %s exists but is not in a usable state (found state: %s)",
+		externalId, matchingInstances[0].State)
 }
 
 func (c *controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
