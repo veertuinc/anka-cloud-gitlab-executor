@@ -145,7 +145,7 @@ func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceI
 				// get the rest of the node details
 				node, err := c.GetNode(ctx, GetNodeRequest{Id: instance.NodeId})
 				if err != nil {
-					return nil, fmt.Errorf("failed to get node %s: %w", instance.Node.Id, err)
+					return nil, fmt.Errorf("failed to get node %s: %w", instance.NodeId, err)
 				}
 				instance.Node = node
 				return instance, nil
