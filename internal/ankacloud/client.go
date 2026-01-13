@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,12 +19,95 @@ import (
 const (
 	defaultMaxIdleConnsPerHost = 20
 	defaultRequestTimeout      = 10 * time.Second
+	DefaultRetryAttempts       = 3
+	DefaultRetryInitialDelay   = 5 * time.Second
+	DefaultRetryMaxDelay       = 30 * time.Second
 )
 
 type APIClient struct {
 	ControllerURL     string
 	HttpClient        *http.Client
 	CustomHttpHeaders map[string]string
+}
+
+// RetryConfig holds configuration for retry behavior with exponential backoff
+type RetryConfig struct {
+	MaxAttempts  int
+	InitialDelay time.Duration
+	MaxDelay     time.Duration
+}
+
+// DefaultRetryConfig returns the default retry configuration
+func DefaultRetryConfig() RetryConfig {
+	return RetryConfig{
+		MaxAttempts:  DefaultRetryAttempts,
+		InitialDelay: DefaultRetryInitialDelay,
+		MaxDelay:     DefaultRetryMaxDelay,
+	}
+}
+
+// IsRetryableError checks if an error is retryable (timeout or transient errors)
+func IsRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// Check for TransientError (which wraps timeout errors)
+	if errors.Is(err, gitlab.ErrTransient) {
+		return true
+	}
+	// Check for url.Error timeout
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && urlErr.Timeout() {
+		return true
+	}
+	// Also check for common timeout error messages
+	errStr := err.Error()
+	return strings.Contains(errStr, "deadline exceeded") ||
+		strings.Contains(errStr, "Client.Timeout")
+}
+
+// WithRetry executes the given operation with retry logic using exponential backoff
+func WithRetry[T any](ctx context.Context, config RetryConfig, operation func() (T, error)) (T, error) {
+	var zero T
+	var lastErr error
+	delay := config.InitialDelay
+
+	for attempt := 1; attempt <= config.MaxAttempts; attempt++ {
+		result, err := operation()
+		if err == nil {
+			return result, nil
+		}
+
+		lastErr = err
+
+		if !IsRetryableError(err) {
+			return zero, err
+		}
+
+		if attempt < config.MaxAttempts {
+			log.Printf("Request timed out (attempt %d/%d), retrying in %v...\n", attempt, config.MaxAttempts, delay)
+			select {
+			case <-ctx.Done():
+				return zero, ctx.Err()
+			case <-time.After(delay):
+			}
+			// Exponential backoff: double the delay for next attempt, capped at MaxDelay
+			delay *= 2
+			if delay > config.MaxDelay {
+				delay = config.MaxDelay
+			}
+		}
+	}
+
+	return zero, fmt.Errorf("operation failed after %d attempts: %w", config.MaxAttempts, lastErr)
+}
+
+// WithRetryNoResult executes the given operation with retry logic for operations that don't return a value
+func WithRetryNoResult(ctx context.Context, config RetryConfig, operation func() error) error {
+	_, err := WithRetry(ctx, config, func() (struct{}, error) {
+		return struct{}{}, operation()
+	})
+	return err
 }
 
 func (c *APIClient) parse(body []byte) (response, error) {

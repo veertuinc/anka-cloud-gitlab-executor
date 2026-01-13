@@ -9,7 +9,7 @@ import (
 	"github.com/veertuinc/anka-cloud-gitlab-executor/internal/log"
 )
 
-type controller struct {
+type Controller struct {
 	APIClient *APIClient
 }
 
@@ -63,12 +63,12 @@ type InstanceWrapper struct {
 	Instance   *Instance `json:"vm,omitempty"`
 }
 
-func NewController(apiClient *APIClient) *controller {
-	return &controller{
+func NewController(apiClient *APIClient) *Controller {
+	return &Controller{
 		APIClient: apiClient,
 	}
 }
-func (c *controller) GetNode(ctx context.Context, req GetNodeRequest) (*Node, error) {
+func (c *Controller) GetNode(ctx context.Context, req GetNodeRequest) (*Node, error) {
 	body, err := c.APIClient.Get(ctx, "/api/v1/node", map[string]string{"id": req.Id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node %q: %w", req.Id, err)
@@ -87,7 +87,7 @@ func (c *controller) GetNode(ctx context.Context, req GetNodeRequest) (*Node, er
 	return &response.Nodes[0], nil
 }
 
-func (c *controller) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
+func (c *Controller) GetInstance(ctx context.Context, req GetInstanceRequest) (*Instance, error) {
 	body, err := c.APIClient.Get(ctx, "/api/v1/vm", map[string]string{"id": req.Id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instance %s: %w", req.Id, err)
@@ -102,7 +102,7 @@ func (c *controller) GetInstance(ctx context.Context, req GetInstanceRequest) (*
 	return &response.Instance, nil
 }
 
-func (c *controller) CreateInstance(ctx context.Context, payload CreateInstanceRequest) (string, error) {
+func (c *Controller) CreateInstance(ctx context.Context, payload CreateInstanceRequest) (string, error) {
 
 	if payload.Priority < 0 || payload.Priority > 10000 {
 		return "", fmt.Errorf("priority must be between 1 and 10000. Got %d", payload.Priority)
@@ -122,7 +122,7 @@ func (c *controller) CreateInstance(ctx context.Context, payload CreateInstanceR
 	return response.InstanceIds[0], nil
 }
 
-func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) (*Instance, error) {
+func (c *Controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceId string) (*Instance, error) {
 	const pollingInterval = 10 * time.Second
 	for {
 		select {
@@ -156,7 +156,7 @@ func (c *controller) WaitForInstanceToBeScheduled(ctx context.Context, instanceI
 	}
 }
 
-func (c *controller) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
+func (c *Controller) TerminateInstance(ctx context.Context, payload TerminateInstanceRequest) error {
 	body, err := c.APIClient.Delete(ctx, "/api/v1/vm", payload)
 	if err != nil {
 		return fmt.Errorf("failed to terminate instance %+v: %w", payload, err)
@@ -171,7 +171,14 @@ func (c *controller) TerminateInstance(ctx context.Context, payload TerminateIns
 	return nil
 }
 
-func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
+// TerminateInstanceWithRetry terminates an instance with automatic retry on timeout errors
+func (c *Controller) TerminateInstanceWithRetry(ctx context.Context, payload TerminateInstanceRequest) error {
+	return WithRetryNoResult(ctx, DefaultRetryConfig(), func() error {
+		return c.TerminateInstance(ctx, payload)
+	})
+}
+
+func (c *Controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 
 	body, err := c.APIClient.Get(ctx, "/api/v1/vm", nil)
 	if err != nil {
@@ -199,7 +206,7 @@ func (c *controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 	return instances, nil
 }
 
-func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
+func (c *Controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
 
 	if len(instances) == 0 {
@@ -235,7 +242,7 @@ func (c *controller) GetInstanceByExternalId(ctx context.Context, externalId str
 		externalId, matchingInstances[0].State)
 }
 
-func (c *controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
+func (c *Controller) GetTemplateIdByName(ctx context.Context, templateName string) (string, error) {
 	body, err := c.APIClient.Get(ctx, "/api/v1/registry/vm", map[string]string{"apiVer": "v1"})
 	if err != nil {
 		return "", fmt.Errorf("failed to get templates: %w", err)
