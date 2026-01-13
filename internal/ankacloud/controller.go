@@ -207,14 +207,19 @@ func (c *Controller) GetAllInstances(ctx context.Context) ([]Instance, error) {
 }
 
 func (c *Controller) GetInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
+	return WithRetry(ctx, DefaultRetryConfig(), func() (*Instance, error) {
+		return c.getInstanceByExternalId(ctx, externalId)
+	})
+}
+
+func (c *Controller) getInstanceByExternalId(ctx context.Context, externalId string) (*Instance, error) {
 	instances, err := c.GetAllInstances(ctx)
-
-	if len(instances) == 0 {
-		return nil, fmt.Errorf("no instances returned from controller: %w", err)
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instance by external id %s: %w", externalId, err)
+	}
+
+	if len(instances) == 0 {
+		return nil, fmt.Errorf("no instances returned from controller")
 	}
 
 	var matchingInstances []*Instance

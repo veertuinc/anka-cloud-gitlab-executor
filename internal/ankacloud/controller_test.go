@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -199,5 +201,102 @@ func TestGetInstanceByExternalId_PrioritizesSchedulingOverError(t *testing.T) {
 
 	if instance.State != StateScheduling {
 		t.Errorf("Expected state Scheduling, got %s", instance.State)
+	}
+}
+
+func TestGetInstanceByExternalId_NoRetryOnNonRetryableError(t *testing.T) {
+	// Test that GetInstanceByExternalId does NOT retry on non-retryable errors
+	var callCount int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&callCount, 1)
+
+		// Return a non-retryable error (bad status)
+		response := response{
+			Status:  "ERROR",
+			Message: "instance not found",
+		}
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	apiClient := &APIClient{
+		ControllerURL: server.URL,
+		HttpClient:    server.Client(),
+	}
+	controller := NewController(apiClient)
+
+	_, err := controller.GetInstanceByExternalId(context.Background(), "https://gitlab.com/job/error-test")
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// Should only make 1 call - no retries for non-retryable errors
+	if atomic.LoadInt32(&callCount) != 1 {
+		t.Errorf("Expected 1 call (no retries for non-retryable error), got %d", callCount)
+	}
+}
+
+func TestGetInstanceByExternalId_OnlyUsableStates(t *testing.T) {
+	// Test that only Error/Terminated instances fail explicitly
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := getAllInstancesResponse{
+			response: response{Status: "OK"},
+			Instances: []InstanceWrapper{
+				{
+					Id:         "terminated-instance",
+					ExternalId: "https://gitlab.com/job/terminated",
+					Instance: &Instance{
+						Id:         "terminated-instance",
+						ExternalId: "https://gitlab.com/job/terminated",
+						State:      StateTerminated,
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	apiClient := &APIClient{
+		ControllerURL: server.URL,
+		HttpClient:    server.Client(),
+	}
+	controller := NewController(apiClient)
+
+	_, err := controller.GetInstanceByExternalId(context.Background(), "https://gitlab.com/job/terminated")
+	if err == nil {
+		t.Fatal("Expected error for terminated instance, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "not in a usable state") {
+		t.Errorf("Expected error about usable state, got: %v", err)
+	}
+}
+
+func TestGetInstanceByExternalId_EmptyInstanceList(t *testing.T) {
+	// Test behavior when no instances exist at all
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := getAllInstancesResponse{
+			response:  response{Status: "OK"},
+			Instances: []InstanceWrapper{},
+		}
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	apiClient := &APIClient{
+		ControllerURL: server.URL,
+		HttpClient:    server.Client(),
+	}
+	controller := NewController(apiClient)
+
+	_, err := controller.GetInstanceByExternalId(context.Background(), "https://gitlab.com/job/any")
+	if err == nil {
+		t.Fatal("Expected error for empty instance list, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "no instances returned") {
+		t.Errorf("Expected 'no instances returned' error, got: %v", err)
 	}
 }
