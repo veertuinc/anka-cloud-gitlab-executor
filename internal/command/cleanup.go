@@ -49,7 +49,7 @@ func executeCleanup(ctx context.Context, env gitlab.Environment) error {
 	log.Printf("instance id: %s\n", instance.Id)
 
 	log.Printf("Issuing termination request for instance %s\n", instance.Id)
-	err = controller.TerminateInstance(ctx, ankacloud.TerminateInstanceRequest{
+	err = controller.TerminateInstanceWithRetry(ctx, ankacloud.TerminateInstanceRequest{
 		Id: instance.Id,
 	})
 	if err != nil {
