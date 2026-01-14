@@ -5,4 +5,3 @@
 3. Create a new release on Github.
 4. Build and Watch https://jenkins/job/anka-cloud-gitlab-executor-release/ to see the release build.
 5. Update the release description and title if needed. The workflow will attach artifacts to the release.
-
