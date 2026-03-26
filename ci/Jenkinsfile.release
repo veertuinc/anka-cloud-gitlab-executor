@@ -4,6 +4,25 @@ pipeline {
         }
     }
     stages {
+        // GoReleaser sets ldflags from git: .Version (tag) + .ShortCommit (HEAD).
+        // If the workspace is not checked out at the release tag, you can ship the wrong
+        // source while still publishing under a release name, or embed a misleading pair.
+        // This stage fails fast unless HEAD is exactly a tag (typical tag-push / tag checkout).
+        stage('Verify release checkout') {
+            steps {
+                sh '''
+                    set -e
+                    git fetch --tags --force
+                    if ! git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+                        echo "ERROR: HEAD is not checked out at an exact git tag."
+                        echo "goreleaser release must run with workspace at the semver tag (e.g. refs/tags/v1.5.3)."
+                        echo "Current: $(git rev-parse --short HEAD) described as: $(git describe --tags --always --dirty)"
+                        exit 1
+                    fi
+                    echo "OK: Releasing from tag $(git describe --tags --exact-match HEAD) at $(git rev-parse HEAD)"
+                '''
+            }
+        }
         stage('Release') {
             steps {
                 withCredentials([
