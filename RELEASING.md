@@ -1,6 +1,6 @@
 # Releasing
 
-1. Run tests: https://bitbucket.org/ORGNAME HERE/anka-cloud-gitlab-executor-integration-test/src/master/README.md
+1. Run tests: https://bitbucket.org/ORGNAMEHERE/anka-cloud-gitlab-executor-integration-test/src/master/README.md
 2. Merge into main branch.
 3. Create a new release on Github (push the semver tag, e.g. `v1.5.3`).
 4. Build and watch https://jenkins/job/anka-cloud-gitlab-executor-release/ to see the release build.
