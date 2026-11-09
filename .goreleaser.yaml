@@ -1,5 +1,11 @@
 version: 2
 
+# The Jenkins release job creates the GitHub Release.
+# keep-existing uploads binaries onto an existing release and leaves its body.
+# The Automation sets the security notes afterwards with `gh release edit`.
+release:
+  mode: keep-existing
+
 before:
   hooks:
     - go mod tidy
