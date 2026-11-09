@@ -3,12 +3,12 @@ name: Tests
 on:
   pull_request:
     branches:
-      - main
+      - edge
       - master
       - 'release/**'
   push:
     branches:
-      - main
+      - edge
       - master
       - 'release/**'
 

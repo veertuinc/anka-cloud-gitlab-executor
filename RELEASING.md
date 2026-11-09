@@ -1,7 +1,7 @@
 # Releasing
 
 1. Run tests: https://bitbucket.org/ORGNAMEHERE/anka-cloud-gitlab-executor-integration-test/src/master/README.md
-2. Merge into main branch.
+2. Merge into edge branch.
 3. Create a new release on Github (push the semver tag, e.g. `v1.5.3`).
 4. Build and watch https://jenkins/job/anka-cloud-gitlab-executor-release/ to see the release build.
 5. Update the release description and title if needed. The workflow will attach artifacts to the release.
@@ -18,6 +18,6 @@ You do **not** get “tag `1.5.3` with commit `7fae15f` printed but older source
 
 ## Release job requirements
 
-- The **release** Jenkins job (`ci/Jenkinsfile.release`) must check out the **exact tag ref** (or a detached `HEAD` at that tag), not an arbitrary `main` tip. The pipeline includes a **Verify release checkout** stage that fails if `HEAD` is not an exact tag match.
+- The **release** Jenkins job (`ci/Jenkinsfile.release`) must check out the **exact tag ref** (or a detached `HEAD` at that tag), not an arbitrary `edge` tip. The pipeline includes a **Verify release checkout** stage that fails if `HEAD` is not an exact tag match.
 - Do not re-use **snapshot** artifacts from `ci/Jenkinsfile.build` (`goreleaser build --snapshot`) as official release binaries; that job is for CI artifacts only.
 - If the job used a **shallow** clone, ensure tags are fetched (`git fetch --tags`); the verify stage runs `git fetch --tags --force`.
