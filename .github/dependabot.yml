@@ -1,0 +1,14 @@
+---
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#target-branch
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    target-branch: "edge"
+    assignees:
+      - "NorseGaud"
+    reviewers:
+      - "NorseGaud"
