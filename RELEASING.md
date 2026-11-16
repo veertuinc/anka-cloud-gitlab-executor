@@ -62,6 +62,8 @@ Wait for result `SUCCESS`. Stop on `FAILURE`, `UNSTABLE`, or `ABORTED`.
 
 ## 4. Tag
 
+Do this step for a version release. Skip it to publish the edge release `v0.0.0`.
+
 1. Read the latest GitHub Release that is not a draft and not a prerelease.
 2. Add 1 to the patch number. That value is `vX.Y.Z`.
 3. Create an annotated tag on the same commit and push the tag:
@@ -83,17 +85,21 @@ Script path: `ci/Jenkinsfile.release`
 
 Parameters: none. Send an empty parameter list.
 
-The job fetches tags (`git fetch --tags --force`) and requires `git describe --tags --exact-match HEAD` to succeed. The job SCM must check out tag `vX.Y.Z`. The Jenkinsfile has no git ref parameter.
+The job SCM checks out branch `edge`. The Jenkinsfile has no git ref parameter.
+
+The job fetches tags and reads the latest GitHub Release that is not a draft and not a prerelease.
+
+When a final tag `vX.Y.Z` is greater than that release, the job checks out that tag. `.goreleaser.yaml` sets `release.mode: keep-existing`. GoReleaser creates the GitHub Release when the tag has none. When a release for that tag already exists, GoReleaser keeps the current body and uploads the binaries. It does not open a second release.
+
+When no such tag exists, the job checks out `edge`. It moves tag `v0.0.0` to that commit. It deletes the GitHub Release `v0.0.0` when one exists, then creates it again. The release name is `v0.0.0 (edge)`. The release is a prerelease. It is not the latest release. The next edge run replaces that release.
 
 The job uses Jenkins credential `AnkaCloudGitlabExecutorGithubToken` as `GITHUB_TOKEN`. It runs `goreleaser release --clean` on node label `cloud_container_host`.
 
 That command creates the one GitHub Release and uploads the binaries. This is a new build of the release binary. It does not publish the snapshot from step 2.
 
-`.goreleaser.yaml` sets `release.mode: keep-existing`. GoReleaser creates the GitHub Release when the tag has none. When a release for that tag already exists, GoReleaser keeps the current body and uploads the binaries. It does not open a second release.
-
 The Jenkins release job is the only creator of the GitHub Release. Do not create one before this job.
 
-Wait for result `SUCCESS`. On `FAILURE`, `UNSTABLE`, or `ABORTED`: stop, keep the tag, and report the build URL.
+Wait for result `SUCCESS`. On `FAILURE`, `UNSTABLE`, or `ABORTED`: stop and report the build URL. Keep a version tag. A failed edge publish can leave tag `v0.0.0` on this commit with no GitHub Release. Run the job again.
 
 ## 6. Release notes
 
@@ -105,10 +111,10 @@ gh release edit vX.Y.Z --repo veertuinc/anka-cloud-gitlab-executor --title "vX.Y
 
 The body lists each security fix. Each item has the GHSA id or CVE id, the package name, the old version, and the new version.
 
-Put those notes on the GitHub Release. Do not add a CHANGELOG file.
+Put those notes on the GitHub Release. Do not add a CHANGELOG file. Skip this step for the edge release. Its name and body are set by the release job.
 
 ## Binary version string
 
-`anka-cloud-gitlab-executor --version` prints `VERSION-SHORTCOMMIT`. Example: `1.5.4-7fae15f`.
+`anka-cloud-gitlab-executor --version` prints `VERSION-SHORTCOMMIT`. Example: `1.5.4-7fae15f`. An edge release prints `0.0.0-<shortcommit>`.
 
-GoReleaser injects `.Version` and `.ShortCommit` with `-ldflags` from the git metadata of the Jenkins workspace. The compiled source is that same `HEAD`. The release job must be on the tag commit. A shallow clone must still have tags. The Jenkinsfile fetches tags before the check.
+GoReleaser injects `.Version` and `.ShortCommit` with `-ldflags` from the git metadata of the Jenkins workspace. The compiled source is that same `HEAD`. A version release checks out that tag. An edge release checks out `edge`. A shallow clone must still have tags. The job fetches tags before it chooses the tag.

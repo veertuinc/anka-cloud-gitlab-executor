@@ -1,8 +1,11 @@
 version: 2
 
+# Version tags use keep-existing.
 # The Jenkins release job creates the GitHub Release.
 # keep-existing uploads binaries onto an existing release and leaves its body.
-# The Automation sets the security notes afterwards with `gh release edit`.
+# The release notes step sets the security notes afterwards with `gh release edit`.
+# Tag v0.0.0 is not configured here. ci/Jenkinsfile.release writes an edge config
+# for that tag, deletes the GitHub Release, and creates it again as "v0.0.0 (edge)".
 release:
   mode: keep-existing
 
