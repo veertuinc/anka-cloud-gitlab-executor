@@ -4,7 +4,6 @@ go 1.26.0
 
 toolchain go1.26.11
 
-
 require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
