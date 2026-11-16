@@ -4,3 +4,5 @@ anka-gle
 dist/
 vendor/
 .DS_Store
+# The govulncheck workflow writes this file. Module scan loads only the root package.
+govulncheck_root.go
