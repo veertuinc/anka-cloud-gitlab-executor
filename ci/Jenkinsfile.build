@@ -3,6 +3,9 @@ pipeline {
             label 'cloud_container_host'
         }
     }
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'edge', description: 'branch to build')
+    }
     stages {
         stage('Build') {
             steps {
