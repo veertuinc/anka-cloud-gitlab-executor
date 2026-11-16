@@ -6,7 +6,7 @@ toolchain go1.26.11
 
 require (
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.1.0
 	golang.org/x/crypto v0.59.0
 )
 
